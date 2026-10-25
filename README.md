@@ -49,10 +49,11 @@ Nothing runs on your computer: the data, the C++ compiling and the model tools a
    claude auth login
    codex login --device-auth
    ```
-3. Download the problem shards you want from the release (step 5 above), for example:
+3. Download the problem shards you want from the release (step 5 above). Each file covers a range of contest IDs and is 0.7 to 1.8 GB, so start with the newest, smallest one:
    ```
-   gh release download data-v1 -p 'c1900-*.sqlite' -D data
+   gh release download data-v1 -p 'c2000-2299.sqlite' -D data
    ```
+   List what is available with `gh release view data-v1`. A `_p2` file is the second part of the shard with the same name; download both (`-p 'c1800-1999*.sqlite'`).
 4. Start the app; Codespaces opens it in a browser tab:
    ```
    python app.py
