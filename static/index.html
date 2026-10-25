@@ -275,8 +275,12 @@ async function api(url, opts) {
 
 function typeset(el) {
   if (!el || !window.renderMathInElement) return;
-  renderMathInElement(el, { throwOnError: false, delimiters: [
-    { left: '$$$$$$', right: '$$$$$$', display: true }, { left: '$$$', right: '$$$', display: false }] });
+  // Codeforces marks math with $$$...$$$ (display: $$$$$$...$$$$$$); older problems use $$...$$ inline.
+  renderMathInElement(el, { throwOnError: false, strict: false, delimiters: [
+    { left: '$$$$$$', right: '$$$$$$', display: true }, { left: '$$$', right: '$$$', display: false },
+    { left: '$$', right: '$$', display: false }],
+    // MathJax (used by Codeforces) accepts a bare "_" inside \texttt{...}; KaTeX needs "\_".
+    preProcess: m => m.replace(/\\texttt\{([^{}]*)\}/g, (_, t) => `\\texttt{${t.replace(/(?<!\\)_/g, '\\_')}}`) });
 }
 
 // ------------------------------------------------------------------ formatting
