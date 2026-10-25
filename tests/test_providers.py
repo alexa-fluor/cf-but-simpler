@@ -176,6 +176,26 @@ if sandbox.DEFAULT_LANG == "cpp":
 else:
     print("SKIP end-to-end: g++ not installed")
 
+# ------------------------------------------------------------ claude CLI provider (fake `claude` on PATH)
+clear_env()
+fake_dir = tempfile.mkdtemp()
+fake = os.path.join(fake_dir, "claude")
+open(fake, "w").write("#!/bin/sh\necho \"$@\" > \"$0.args\"\ncat > \"$0.stdin\"\necho cli-reply\n")
+os.chmod(fake, 0o755)
+old_path = os.environ["PATH"]
+os.environ["PATH"] = fake_dir + os.pathsep + old_path
+check("claude-cli is never auto-selected", llm.provider() is None)
+os.environ["LLM_PROVIDER"] = "claude-cli"
+check("claude-cli selected when forced; default model haiku", llm.provider()["name"] == "claude-cli" and llm.judge_model() == "haiku")
+out = llm.ask("haiku", "SYSPROMPT", "the user text")
+args = open(fake + ".args").read()
+check("cli: reply returned, system prompt + model passed, tools off",
+      out.strip() == "cli-reply" and "SYSPROMPT" in args and "--model haiku" in args and "--tools" in args, args[:80])
+check("cli: user text sent on stdin", open(fake + ".stdin").read() == "the user text")
+os.environ["PATH"] = "/nonexistent"
+check("claude-cli without the binary gives a specific message", llm.provider() is None and "claude" in llm.missing_message())
+os.environ["PATH"] = old_path
+
 print(f"\n{check.failed} failure(s)")
 srv.shutdown()
 sys.exit(1 if check.failed else 0)

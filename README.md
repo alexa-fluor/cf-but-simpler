@@ -65,9 +65,12 @@ The judge works with any of these; the first one with a key set is used (order: 
 | Groq (free tier) | `GROQ_API_KEY` | set `JUDGE_MODEL` |
 | OpenRouter (has free models) | `OPENROUTER_API_KEY` | set `JUDGE_MODEL` (a model ending in `:free`) |
 | Anything OpenAI-compatible | `LLM_BASE_URL` + `LLM_API_KEY` | set `JUDGE_MODEL` |
+| Claude Code CLI (your own Claude login) | `LLM_PROVIDER=claude-cli` | default `haiku` |
 | Anthropic (paid) | `ANTHROPIC_API_KEY` | default `claude-haiku-5-5` |
 
 Force one with `LLM_PROVIDER=gemini|groq|openrouter|openai|anthropic`. Check your setup with `python scripts/check_llm.py`, and list the models your key can use with `python scripts/check_llm.py --models`.
+
+**Using your Claude subscription:** the Codespace installs Claude Code. In its terminal run `claude` once and log in (it prints a link to open in your browser), then add a Codespaces secret `LLM_PROVIDER` = `claude-cli` (or run `export LLM_PROVIDER=claude-cli` before `python app.py`). Calls count against your plan's usage limits and take a few seconds each. I could not confirm that Anthropic's terms allow scripted use of a subscription login, so check their current terms.
 
 Honest caveats:
 

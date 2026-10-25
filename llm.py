@@ -8,11 +8,16 @@ Settings (environment variables):
   LLM_PROVIDER   anthropic | gemini | groq | openrouter | openai   (default: first one with a key)
   ANTHROPIC_API_KEY, GEMINI_API_KEY, GROQ_API_KEY, OPENROUTER_API_KEY
   LLM_BASE_URL + LLM_API_KEY   for provider "openai" (any OpenAI-compatible server)
+  LLM_PROVIDER=claude-cli   run the `claude` CLI (Claude Code) logged in to your own account:
+                 model aliases like haiku / sonnet. Uses your plan's limits; slower per call.
+                 Check Anthropic's current terms for scripted use of a subscription login.
   JUDGE_MODEL    model for the rubric gate and first translation
   RETRY_MODEL    model for the second translation (default: same as JUDGE_MODEL)
 """
 import json
 import os
+import shutil
+import subprocess
 import time
 import urllib.error
 import urllib.request
@@ -26,12 +31,15 @@ PRESETS = {
     "groq": {"kind": "openai", "base": "https://api.groq.com/openai/v1", "key_env": "GROQ_API_KEY", "judge": None},
     "openrouter": {"kind": "openai", "base": "https://openrouter.ai/api/v1", "key_env": "OPENROUTER_API_KEY", "judge": None},
     "openai": {"kind": "openai", "base": None, "key_env": "LLM_API_KEY", "judge": None},
+    "claude-cli": {"kind": "cli", "key_env": "(claude login)", "judge": "haiku"},
 }
-AUTO_ORDER = ["anthropic", "gemini", "groq", "openrouter", "openai"]
+AUTO_ORDER = ["anthropic", "gemini", "groq", "openrouter", "openai"]  # claude-cli is explicit only
 
 
 def _resolve(name):
     p = dict(PRESETS[name], name=name)
+    if p["kind"] == "cli":
+        return p if shutil.which("claude") else None
     if name == "openai":
         p["base"] = os.environ.get("LLM_BASE_URL")
     key = os.environ.get(p["key_env"])
@@ -58,8 +66,10 @@ def provider():
 def missing_message():
     name = os.environ.get("LLM_PROVIDER", "").strip().lower()
     if name in PRESETS:
-        need = "LLM_BASE_URL and LLM_API_KEY" if name == "openai" else PRESETS[name]["key_env"]
-        return f"LLM_PROVIDER is '{name}' but {need} is not set."
+        need = ("LLM_BASE_URL and LLM_API_KEY" if name == "openai" else
+                "the `claude` command (install Claude Code and run `claude` once to log in)" if name == "claude-cli"
+                else PRESETS[name]["key_env"])
+        return f"LLM_PROVIDER is '{name}' but {need} is not available/set."
     return ("No AI provider is configured. Set one of ANTHROPIC_API_KEY, GEMINI_API_KEY (free tier), "
             "GROQ_API_KEY, OPENROUTER_API_KEY, or LLM_BASE_URL + LLM_API_KEY. See the README.")
 
@@ -91,8 +101,29 @@ def ask(model, system, user, max_tokens=1500):
             model=model, max_tokens=max_tokens, system=system,
             messages=[{"role": "user", "content": user}])
         return "".join(b.text for b in r.content if b.type == "text")
+    if p["kind"] == "cli":
+        return _claude_cli(model, system, user)
     # Some models "think" before answering and that can eat the budget, so give them room.
     return _openai_chat(p, model, system, user, max(max_tokens * 3, 4096))
+
+
+def _claude_cli(model, system, user):
+    cmd = ["claude", "-p", "--model", model, "--system-prompt", system, "--tools", "",
+           "--no-session-persistence", "--disable-slash-commands"]
+    last = ""
+    for delay in (0,) + RETRY_DELAYS[:1]:
+        if delay:
+            time.sleep(delay)
+        try:
+            r = subprocess.run(cmd, input=user, capture_output=True, text=True, timeout=300)
+        except subprocess.TimeoutExpired:
+            last = "timed out"
+            continue
+        if r.returncode == 0 and r.stdout.strip():
+            return r.stdout
+        last = (r.stderr or r.stdout).strip()[:300] or f"exit code {r.returncode}"
+    raise RuntimeError(f"The claude CLI failed: {last}. Run `claude` once in the terminal to check you are "
+                       "logged in and haven't hit your plan's usage limit.")
 
 
 def list_models(p=None):
