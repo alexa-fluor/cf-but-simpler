@@ -1,0 +1,42 @@
+name: CI
+
+# Runs on every push. Two checks:
+#  1. tests: the full local test suite (fake dataset with the real schema, C++ judge, checker, API)
+#  2. hf-smoke: imports a small slice of the REAL Hugging Face dataset end to end, which proves
+#     streaming, per-contest test download, selection and shard writing work on GitHub.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install flask anthropic pyarrow pyyaml datasets huggingface_hub
+      - run: python tests/run_checks.py
+
+  hf-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r importer/requirements.txt flask anthropic
+      - name: Import a small slice of the real dataset
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          python importer/build_dataset.py --source hf --tag smoke \
+            --contest-min 1900 --contest-max 1912 --max-tests 10 --out out
+      - name: Verify the shard is usable by the app
+        run: python tests/verify_shard.py out/smoke.sqlite

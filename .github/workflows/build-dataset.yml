@@ -1,0 +1,101 @@
+name: Build Codeforces dataset shards
+
+# Runs on GitHub's servers so the ~110 GB of generated tests never touch your PC.
+# Each matrix job handles a range of contest IDs, downloads that contest's test file,
+# keeps a capped subset of tests per problem, deletes the download, and publishes
+# small sqlite shards as release assets (each file must stay under 2 GiB).
+# The run summary lists how many problems were loaded and why any were left out.
+
+on:
+  workflow_dispatch:
+    inputs:
+      subset:
+        description: "verifiable = problems with trustworthy tests (recommended). default = every problem in the dataset"
+        type: choice
+        options: [verifiable, default]
+        default: verifiable
+      rated_only:
+        description: Skip problems that have no rating
+        type: boolean
+        default: false
+      min_rating:
+        description: Lowest rating to include (does not affect unrated problems)
+        default: "0"
+      max_rating:
+        description: Highest rating to include (does not affect unrated problems)
+        default: "4000"
+      max_tests:
+        description: Max tests kept per problem
+        default: "30"
+      release_tag:
+        description: Release that the shards are uploaded to
+        default: "data-v1"
+
+permissions:
+  contents: write
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ensure the release exists
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ inputs.release_tag }}
+        run: |
+          gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1 || \
+          gh release create "$TAG" --repo "$GITHUB_REPOSITORY" \
+            --title "Codeforces data shards ($TAG)" \
+            --notes "Compact sqlite shards built from open-r1/codeforces. Download the ones you want into the app's data/ folder."
+
+  build:
+    needs: prepare
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    strategy:
+      fail-fast: false
+      max-parallel: 4
+      matrix:
+        range: ["1-599", "600-1099", "1100-1399", "1400-1599", "1600-1799", "1800-1999", "2000-2299", "2300-9999"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install -r importer/requirements.txt
+
+      - name: Build shards for this contest range
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          RANGE: ${{ matrix.range }}
+          SUBSET: ${{ inputs.subset }}
+          RATED_ONLY: ${{ inputs.rated_only }}
+        run: |
+          LO="${RANGE%-*}"; HI="${RANGE#*-}"
+          EXTRA=""
+          if [ "$RATED_ONLY" = "true" ]; then EXTRA="$EXTRA --rated-only"; fi
+          if [ "$SUBSET" = "default" ]; then EXTRA="$EXTRA --allow-nonexecutable"; fi
+          python importer/build_dataset.py \
+            --source hf \
+            --subset "$SUBSET" \
+            --tag "c${LO}-${HI}" \
+            --contest-min "$LO" --contest-max "$HI" \
+            --min-rating "${{ inputs.min_rating }}" --max-rating "${{ inputs.max_rating }}" \
+            --max-tests "${{ inputs.max_tests }}" \
+            $EXTRA \
+            --out out
+          ls -la out
+          df -h .
+
+      - name: Upload shards to the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ inputs.release_tag }}
+        run: |
+          shopt -s nullglob
+          files=(out/*.sqlite out/*.manifest.json)
+          if [ ${#files[@]} -eq 0 ]; then echo "nothing to upload"; exit 0; fi
+          gh release upload "$TAG" "${files[@]}" --clobber --repo "$GITHUB_REPOSITORY"

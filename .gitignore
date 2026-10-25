@@ -1,0 +1,8 @@
+user/
+data/*.sqlite
+out/
+__pycache__/
+*.pyc
+.env
+*.env
+key.env
