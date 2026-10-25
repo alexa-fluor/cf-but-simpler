@@ -37,7 +37,25 @@ Tests are the dataset's own: official tests where they were not truncated, plus 
 
 Codeforces writes inline math as `$$$...$$$`; the markers are stripped, so formulas appear as plain text.
 
-## Run the app
+## Run it online only (GitHub Codespaces, nothing installed on your PC)
+
+A Codespace is a small Linux machine that GitHub runs for you; you use the app in your browser. The repo is already set up for it (`.devcontainer/`). Free GitHub accounts include 120 core-hours and 15 GB of Codespaces storage per month. On the default 2-core machine that is about 60 hours of use, and the Codespace stops itself after idle time, so it costs nothing while you are away.
+
+1. **Build the data first** (see "Getting the Codeforces problems" above) so the release has shards.
+2. **Add your API key as a Codespaces secret *before* creating the Codespace:** GitHub, your profile picture, Settings, Codespaces, New secret. Name `ANTHROPIC_API_KEY`, give it access to this repo. Optional: a second secret `APP_PASSWORD` makes the app ask for a password.
+3. On the repo page: **Code**, **Codespaces** tab, **Create codespace on main**.
+4. The first start installs everything and downloads up to 8 GB of shards (newest contests first), then starts the app. Open the **Ports** tab and click the globe next to port 5000. The port is private: only you, logged in to GitHub, can open it (this also works from your phone's browser).
+5. Next time, open the same Codespace from github.com/codespaces. Your downloaded data and cached rubrics are still there.
+
+Useful commands in the Codespace terminal:
+
+- See what shards exist: `python scripts/fetch_data.py --list`
+- Download more or fewer: `python scripts/fetch_data.py --max-gb 3`, or `--only 'c19*'`, `--order oldest`
+- Restart the app: `pkill -f app.py; python app.py` (logs of the auto-started one are in `/tmp/app.log`)
+
+Keep the shard total well under 15 GB, because stopped Codespaces still count against the storage allowance. Don't make port 5000 public unless you set `APP_PASSWORD`: anyone who reaches it can spend your API credits and run generated code on the machine.
+
+## Run the app on your own computer
 
 ```
 pip install -r requirements.txt

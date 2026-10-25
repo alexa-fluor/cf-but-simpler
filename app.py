@@ -1,6 +1,7 @@
+import hmac
 import os
 
-from flask import Flask, jsonify, request, send_from_directory
+from flask import Flask, Response, jsonify, request, send_from_directory
 
 import judge
 from store import Store
@@ -8,6 +9,19 @@ from store import Store
 HERE = os.path.dirname(os.path.abspath(__file__))
 app = Flask(__name__, static_folder=os.path.join(HERE, "static"))
 store = Store(HERE)
+
+
+@app.before_request
+def password_gate():
+    """If APP_PASSWORD is set, every request needs it (HTTP basic auth, any username).
+    Protects your API credits and the code-running endpoint if the port is ever made public."""
+    password = os.environ.get("APP_PASSWORD")
+    if not password:
+        return None
+    auth = request.authorization
+    if auth and hmac.compare_digest((auth.password or "").encode(), password.encode()):
+        return None
+    return Response("Password required.", 401, {"WWW-Authenticate": 'Basic realm="Logic Judge"'})
 
 
 def _int(name):
@@ -64,4 +78,4 @@ def submit():
 
 
 if __name__ == "__main__":
-    app.run(host="127.0.0.1", port=5000, debug=False)
+    app.run(host=os.environ.get("HOST", "127.0.0.1"), port=int(os.environ.get("PORT", "5000")), debug=False)

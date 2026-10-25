@@ -1,0 +1,15 @@
+{
+  "name": "Logic Judge",
+  "image": "mcr.microsoft.com/devcontainers/python:3.12",
+  "postCreateCommand": "(which g++ || (sudo apt-get update && sudo apt-get install -y g++)) && pip install -r requirements.txt && python scripts/fetch_data.py --max-gb 8 || true",
+  "postStartCommand": "nohup python app.py > /tmp/app.log 2>&1 &",
+  "remoteEnv": { "HOST": "0.0.0.0" },
+  "forwardPorts": [5000],
+  "portsAttributes": {
+    "5000": { "label": "Logic Judge", "onAutoForward": "openBrowser", "visibility": "private" }
+  },
+  "secrets": {
+    "ANTHROPIC_API_KEY": { "description": "Anthropic API key used by the judge (Haiku)." },
+    "APP_PASSWORD": { "description": "Optional. If set, the app asks for this password (use any username)." }
+  }
+}
