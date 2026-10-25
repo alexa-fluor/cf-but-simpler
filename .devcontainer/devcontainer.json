@@ -9,7 +9,8 @@
     "5000": { "label": "Logic Judge", "onAutoForward": "openBrowser", "visibility": "private" }
   },
   "secrets": {
-    "ANTHROPIC_API_KEY": { "description": "Anthropic API key used by the judge (Haiku)." },
+    "GEMINI_API_KEY": { "description": "Free Google Gemini key (aistudio.google.com). Used if no Anthropic key is set." },
+    "ANTHROPIC_API_KEY": { "description": "Optional. Paid Anthropic API key; takes priority over free providers if set." },
     "APP_PASSWORD": { "description": "Optional. If set, the app asks for this password (use any username)." }
   }
 }

@@ -7,16 +7,12 @@ import json
 import os
 import re
 
-import anthropic
-
+import llm
 import sandbox
 from sandbox import run_tests
 
-# Override with env vars. RETRY_MODEL is used for the second translation attempt
-# (a different model gives a more independent second opinion; the same model still
-# gives a fresh sample).
-JUDGE_MODEL = os.environ.get("JUDGE_MODEL", "claude-haiku-5-5")
-RETRY_MODEL = os.environ.get("RETRY_MODEL", JUDGE_MODEL)
+# Models come from llm.judge_model() / llm.retry_model() (env JUDGE_MODEL / RETRY_MODEL, or the
+# provider default). A different RETRY_MODEL gives a more independent second opinion.
 
 USER_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "user")
 CACHE_PATH = os.path.join(USER_DIR, "cache.json")
@@ -56,18 +52,8 @@ Reply with JSON only:
  "common_wrong": ["tempting approaches that fail, and why"]}"""
 
 
-def _client():
-    return anthropic.Anthropic()
-
-
 def ask(model, system, user, max_tokens=1500):
-    r = _client().messages.create(
-        model=model,
-        max_tokens=max_tokens,
-        system=system,
-        messages=[{"role": "user", "content": user}],
-    )
-    return "".join(b.text for b in r.content if b.type == "text")
+    return llm.ask(model, system, user, max_tokens)
 
 
 def _extract_json(text):
@@ -117,7 +103,7 @@ def rubric_for(problem):
     editorial = (problem.get("editorial") or "")[:12000]
     user = f"<problem>\n{problem_text(problem)}\n</problem>\n\n<editorial>\n{editorial or '(none available)'}\n</editorial>"
     try:
-        rubric = _extract_json(ask(JUDGE_MODEL, RUBRIC_SYSTEM, user, max_tokens=1200))
+        rubric = _extract_json(ask(llm.judge_model(), RUBRIC_SYSTEM, user, max_tokens=1200))
     except Exception:
         return {"note": "No rubric could be generated; judge from the statement and your own knowledge."}
     cache[problem["id"]] = rubric
@@ -131,7 +117,7 @@ def gate(problem, submission, model=None):
         f"<rubric>\n{json.dumps(rubric_for(problem), indent=2)}\n</rubric>\n\n"
         f"<submission>\n{submission}\n</submission>"
     )
-    return _extract_json(ask(model or JUDGE_MODEL, GATE_SYSTEM, user))
+    return _extract_json(ask(model or llm.judge_model(), GATE_SYSTEM, user))
 
 
 def translate(problem, submission, model, lang):
@@ -190,7 +176,7 @@ def _judge(problem, submission, skip_gate, get_tests, lang):
 
     # Stage 2: translate -> run
     tests = get_tests()
-    code, why = translate(problem, submission, JUDGE_MODEL, lang)
+    code, why = translate(problem, submission, llm.judge_model(), lang)
     stages.append("translate-1")
     if code is None:
         return {
@@ -206,7 +192,7 @@ def _judge(problem, submission, skip_gate, get_tests, lang):
 
     # Failed. Before blaming the student, get an independent second translation
     # (fresh request, possibly a different model) in case the translator slipped.
-    code2, _ = translate(problem, submission, RETRY_MODEL, lang)
+    code2, _ = translate(problem, submission, llm.retry_model(), lang)
     stages.append("translate-2")
     if code2 is not None:
         r2 = _run(problem, code2, tests, lang)
