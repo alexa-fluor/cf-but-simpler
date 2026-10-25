@@ -4,13 +4,12 @@
   "features": { "ghcr.io/devcontainers/features/node:1": {} },
   "postCreateCommand": "(npm install -g @anthropic-ai/claude-code || true) && (which g++ || (sudo apt-get update && sudo apt-get install -y g++)) && pip install -r requirements.txt && python scripts/fetch_data.py --max-gb 8 || true",
   "postStartCommand": "nohup python app.py > /tmp/app.log 2>&1 &",
-  "remoteEnv": { "HOST": "0.0.0.0" },
+  "remoteEnv": { "HOST": "0.0.0.0", "LLM_PROVIDER": "${localEnv:LLM_PROVIDER:claude-cli}" },
   "forwardPorts": [5000],
   "portsAttributes": {
     "5000": { "label": "Logic Judge", "onAutoForward": "openBrowser", "visibility": "private" }
   },
   "secrets": {
-    "LLM_PROVIDER": { "description": "Optional. Set to claude-cli to use your own Claude login via Claude Code." },
     "GEMINI_API_KEY": { "description": "Free Google Gemini key (aistudio.google.com). Used if no Anthropic key is set." },
     "ANTHROPIC_API_KEY": { "description": "Optional. Paid Anthropic API key; takes priority over free providers if set." },
     "APP_PASSWORD": { "description": "Optional. If set, the app asks for this password (use any username)." }
