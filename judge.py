@@ -22,6 +22,8 @@ from sandbox import run_tests
 JUDGE_MODEL = os.environ.get("JUDGE_MODEL", "claude:claude-haiku-5-5")
 RETRY_MODEL = os.environ.get("RETRY_MODEL", "codex:gpt-6-luna")
 CLI_TIMEOUT = int(os.environ.get("CLI_TIMEOUT", "300"))
+# Part of the cache key: bump when judging changes, so old cached verdicts are not replayed.
+JUDGE_VERSION = 2
 
 USER_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "user")
 CACHE_PATH = os.path.join(USER_DIR, "cache.json")
@@ -186,7 +188,7 @@ def translate(problem, submission, model, lang):
 def judge(problem, submission, skip_gate=False, get_tests=None):
     lang = sandbox.DEFAULT_LANG
     key = hashlib.sha256(
-        json.dumps([problem["id"], submission.strip(), skip_gate, lang]).encode()
+        json.dumps([JUDGE_VERSION, problem["id"], submission.strip(), skip_gate, lang]).encode()
     ).hexdigest()
     cache = _load(CACHE_PATH)
     if key in cache:
@@ -198,11 +200,17 @@ def judge(problem, submission, skip_gate=False, get_tests=None):
     return result
 
 
+# Codeforces' standard line, e.g. 'You can output each letter in any case (for example, "YES",
+# "Yes", "yes" ... will be recognized as a positive answer)'.
+ANY_CASE = re.compile(r"in any (letter )?(case|register)|case[- ]insensitive", re.I)
+
+
 def _run(problem, code, tests, lang):
     return run_tests(code, tests, lang=lang, time_limit=problem.get("time_limit", 3.0),
                      mem_mb=problem.get("memory_limit", 256.0),
                      checker_source=problem.get("checker", ""),
-                     input_mode=problem.get("input_mode", "stdio"))
+                     input_mode=problem.get("input_mode", "stdio"),
+                     any_case=bool(ANY_CASE.search(problem.get("statement", ""))))
 
 
 def _judge(problem, submission, skip_gate, get_tests, lang):

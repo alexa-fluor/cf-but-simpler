@@ -259,6 +259,17 @@ def fake_for(translations, gate=OK_GATE):
 pA = st.get("900/A")
 getA = lambda: st.tests("900/A")
 check("g++ is available", sandbox.DEFAULT_LANG == "cpp", sandbox.DEFAULT_LANG)
+check("output compared exactly unless the statement allows any case",
+      not sandbox.same_output("YES", "Yes") and sandbox.same_output("YES\nno\n", "Yes\nNO", any_case=True)
+      and not sandbox.same_output("YES", "YES NO", any_case=True) and not sandbox.same_output("YES", "NO", any_case=True))
+check("'any case' line in the statement is detected",
+      judge.ANY_CASE.search('You can output each letter in any case (for example, "YES", "Yes", "yes", "yEs")')
+      and judge.ANY_CASE.search("You may print every letter in any register") and not judge.ANY_CASE.search("Print YES or NO."))
+CPP_YES = '#include <cstdio>\nint main(){puts("YES");}\n'
+p_case = {"id": "case", "statement": "Print yes. You can print each letter in any case.", "time_limit": 2, "memory_limit": 256}
+check("judge accepts YES for Yes when the statement allows any case",
+      judge._run(p_case, CPP_YES, [{"input": "1\n", "output": "Yes\n"}], "cpp")["passed"]
+      and not judge._run({**p_case, "statement": "Print Yes."}, CPP_YES, [{"input": "1\n", "output": "Yes\n"}], "cpp")["passed"])
 check("model ids pick the right CLI", judge._split("codex:gpt-6-luna") == ("codex", "gpt-6-luna")
       and judge._split("claude-haiku-5-5") == ("claude", "claude-haiku-5-5") and judge._split("api:claude-x") == ("api", "claude-x"))
 judge.ask = fake_for([CPP_OK])

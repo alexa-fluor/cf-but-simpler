@@ -117,7 +117,17 @@ class Checker:
         shutil.rmtree(self.dir, ignore_errors=True)
 
 
-def run_tests(code, tests, lang=None, time_limit=3.0, mem_mb=256, checker_source="", input_mode="stdio"):
+def same_output(got, expected, any_case=False):
+    """Token-by-token comparison. any_case: the statement says letters may be printed in any
+    case ("YES", "Yes" and "yEs" are all accepted)."""
+    a, b = got.split(), expected.split()
+    if any_case:
+        a, b = [x.lower() for x in a], [y.lower() for y in b]
+    return a == b
+
+
+def run_tests(code, tests, lang=None, time_limit=3.0, mem_mb=256, checker_source="", input_mode="stdio",
+              any_case=False):
     """tests: [{"input","output"}]. Smallest inputs first, so the first failure is the
     smallest counterexample."""
     lang = lang or DEFAULT_LANG
@@ -132,7 +142,7 @@ def run_tests(code, tests, lang=None, time_limit=3.0, mem_mb=256, checker_source
         for t in ordered:
             status, out, limit = prog.run(t["input"], time_limit, mem_mb, input_mode)
             if status == "ok":
-                good, why = chk.ok(t, out) if chk else (out.split() == t["output"].split(), "")
+                good, why = chk.ok(t, out) if chk else (same_output(out, t["output"], any_case), "")
             else:
                 good, why = False, ""
             if good:
