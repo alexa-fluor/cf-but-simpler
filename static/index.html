@@ -4,182 +4,752 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Logic Judge</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cuprum&family=PT+Sans+Narrow:wght@700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/contrib/auto-render.min.js" onload="typeset(document.getElementById('page'))"></script>
 <style>
-  :root { --bg:#fafaf7; --fg:#1d1d1b; --muted:#6b6b66; --card:#fff; --line:#e3e2dc;
-          --ok:#1a7f4b; --bad:#b3261e; --mid:#a15c00; --accent:#3b4ccf; }
-  @media (prefers-color-scheme: dark) {
-    :root { --bg:#161615; --fg:#ecebe6; --muted:#9a9990; --card:#1f1f1d; --line:#33332f;
-            --ok:#4cc38a; --bad:#ff7b72; --mid:#e3a03a; --accent:#8c98ff; }
-  }
+  /* Codeforces look: verdana 14px, #3b5998 captions, #b9b9b9 rounded boxes, #e1e1e1 datatables. */
+  html { font-size: 10px; }
   * { box-sizing: border-box; }
-  body { margin:0; background:var(--bg); color:var(--fg);
-         font:16px/1.55 system-ui, -apple-system, "Segoe UI", sans-serif; }
-  main { max-width:820px; margin:0 auto; padding:24px 16px 64px; }
-  h1 { font-size:22px; margin:0 0 4px; }
-  .sub { color:var(--muted); margin:0 0 16px; }
-  select, input, textarea, button { font:inherit; color:inherit; }
-  select, input[type=search] { padding:8px 10px; background:var(--card); border:1px solid var(--line); border-radius:8px; }
-  .filters { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
-  .filters input[type=search] { flex:1; min-width:140px; }
-  .card { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:16px; margin-top:16px; }
-  #list { max-height:230px; overflow:auto; margin-top:10px; padding:4px; }
-  .item { display:flex; gap:10px; padding:6px 8px; border-radius:6px; cursor:pointer; align-items:baseline; }
-  .item:hover, .item.sel { background:var(--bg); }
-  .rate { min-width:46px; font-variant-numeric:tabular-nums; font-weight:600; color:var(--accent); }
-  .lbl { min-width:62px; color:var(--muted); font-size:14px; }
-  .statement { white-space:pre-wrap; overflow-wrap:anywhere; }
-  .chips { display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin:2px 0 10px; }
-  .chip { font-size:13px; padding:2px 9px; border-radius:99px; border:1px solid var(--line); color:var(--muted); }
-  .chip.r { color:var(--accent); border-color:var(--accent); font-weight:600; }
-  .link a { color:var(--accent); }
-  textarea { width:100%; min-height:170px; padding:12px; background:var(--bg);
-             border:1px solid var(--line); border-radius:8px; resize:vertical; }
-  .row { display:flex; gap:10px; margin-top:12px; flex-wrap:wrap; }
-  button { padding:9px 15px; border-radius:8px; border:1px solid var(--line); background:var(--card); cursor:pointer; }
-  button.primary { background:var(--accent); border-color:var(--accent); color:#fff; }
-  button.small { padding:2px 9px; font-size:13px; }
-  button:disabled { opacity:.5; cursor:wait; }
-  .verdict { font-weight:700; font-size:18px; }
-  .correct { color:var(--ok); } .wrong { color:var(--bad); } .partial { color:var(--mid); }
-  pre { background:var(--bg); border:1px solid var(--line); border-radius:8px; padding:10px; overflow:auto; font-size:13px; }
-  details { margin-top:10px; } summary { cursor:pointer; color:var(--muted); }
-  ul { margin:6px 0 0 18px; padding:0; }
-  .muted { color:var(--muted); font-size:14px; }
+  body { margin: 3px auto; padding: 0 8px; max-width: 1300px; background: #fff; color: #000;
+         font-family: verdana, arial, sans-serif; font-size: 1.4rem; }
+  a { color: #00c; }
+  a:visited { color: #00c; }
+  input, select, textarea, button { font-family: verdana, arial, sans-serif; font-size: 1.3rem; }
+  input[type=text], input[type=number], input[type=search], select {
+    border: 1px solid #aaa; padding: 1px 3px; height: 2.1rem; background: #fff; }
+  input[type=number] { -moz-appearance: textfield; }
+  input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; }
+  button, .btn { display: inline-block; padding: 0 1em; height: 2.3rem; line-height: 2.1rem; border: 1px solid #a5a5a5;
+         border-radius: 3px; background: linear-gradient(#fdfdfd, #e6e6e6); color: #000; cursor: pointer;
+         text-decoration: none !important; font-size: 1.3rem; }
+  button:hover, .btn:hover { background: linear-gradient(#fff, #dcdcdc); }
+  button:disabled { color: #999; cursor: default; }
+  .notice { color: #888; }
+  .small { font-size: 1.1rem; }
+  .hidden { display: none !important; }
+
+  /* header */
+  #header { margin: 0 1.4rem; min-height: 7rem; display: flex; justify-content: space-between; align-items: flex-start; }
+  .logo { display: flex; align-items: center; gap: 8px; text-decoration: none; color: #000 !important; padding-top: 8px; }
+  .logo .words { display: flex; flex-direction: column; line-height: 1; }
+  .logo .wordmark { font-family: Copperplate, "Copperplate Gothic Light", "PT Serif Caption", Georgia, serif;
+                    font-size: 3.3rem; letter-spacing: .5px; color: #222; font-variant: small-caps; font-weight: 600; }
+  .logo .tagline { font-size: 1.3rem; color: #222; align-self: flex-end; margin-top: 2px; font-family: "Helvetica Neue", Arial, sans-serif; }
+  .lang-chooser { text-align: right; padding-top: 10px; }
+  .lang-chooser .who { font-weight: bold; }
+
+  /* top menu */
+  .menu-box { margin: 0 1.4rem; border: 1px solid #b9b9b9; border-radius: 6px; padding: 0 0 0 1.25em;
+              height: 3.6rem; display: flex; align-items: center; }
+  .menu-list { list-style: none; margin: 0; padding: 0; display: flex; gap: 1.2em; }
+  .menu-list li { font-family: Cuprum, "Arial Narrow", sans-serif; padding-bottom: 1px; border-bottom: 3px solid transparent; position: relative; top: 2px; }
+  .menu-list li a { font-size: 1.5rem; text-transform: uppercase; color: #000; text-decoration: none; line-height: 22px; }
+  .menu-list li.current { border-bottom-color: #3b5998; }
+
+  /* page grid */
+  #main { display: flex; align-items: flex-start; }
+  #pageContent { flex: 1; min-width: 0; margin: 3.2rem 2.8rem 1.4rem 1.4rem; padding-top: 1.4rem; position: relative; }
+  #sidebar { width: 28rem; flex: none; margin: 3.2rem 1.4rem 1.4rem 0; }
+  .second-level-menu { position: absolute; left: -7px; top: -1.2rem; }
+  .second-level-menu ul { list-style: none; margin: 0; padding: 0; display: inline-flex; }
+  .second-level-menu li a { display: block; font-family: "PT Sans Narrow", "Arial Narrow", sans-serif; font-weight: bold; font-size: 1.2rem;
+                            text-transform: uppercase; color: #000; text-decoration: none; line-height: 20px; padding: 0 8px; border-radius: 5px; }
+  .second-level-menu li.current a { background: #dadada; }
+  #page { padding-top: 1.4rem; }
+
+  /* roundbox / sidebox */
+  .roundbox { border: 1px solid #b9b9b9; border-radius: 6px; background: #fff; position: relative; overflow: hidden; }
+  .sidebox { margin-bottom: 1.5em; }
+  .roundbox .caption { color: #3b5998; font-size: 1.5rem; font-weight: bold; margin: .2em 0; }
+  .roundbox .titled { padding: 0 0 .3em .5em; border-bottom: 1px solid #b9b9b9; }
+  .roundbox .titled .top-links { float: right; margin-right: .5em; font-size: 1.1rem; font-weight: normal; font-family: arial; position: relative; top: 3px; }
+  .roundbox .bottom-links { font-family: arial; font-size: 1.1rem; border-top: 1px solid #b9b9b9; background: #f5f5f5; padding: .45em; }
+  .roundbox .inner { padding: .5em; }
+  .highlight-blue { background: #def; }
+  .rtable { width: 100%; border-collapse: collapse; }
+  .rtable th, .rtable td { border-bottom: 1px solid #b9b9b9; border-left: 1px solid #b9b9b9; padding: 4px; text-align: center; font-size: .9em; }
+  .rtable th { font-size: 1em; padding-top: 7px; }
+  .rtable .left { border-left: none; } .rtable tr:last-child td { border-bottom: none; }
+  .contest-state-phase { color: #3b5998; font-size: 1.5rem; font-weight: bold; }
+  .filter-row { overflow: auto; margin: 3px 0 10px 3px; display: flex; align-items: center; justify-content: space-between; gap: 6px; }
+  .filter-row input[type=number] { width: 6rem; }
+  .filter-row input[type=search] { width: 15rem; }
+  .tag-box { display: inline-block; margin: 2px 4px 2px 0; padding: 0 3px 2px 3px; background: #f0f0f0; border: 1px solid #b9b9b9;
+             border-radius: 5px; font-size: 1.2rem; }
+
+  /* datatable */
+  .datatable { background: #e1e1e1; padding-bottom: 3px; border-radius: 6px; position: relative; }
+  .datatable .dt-caption { padding: 4px 6px 0 6px; font-size: 1.4rem; display: flex; justify-content: space-between; align-items: center; }
+  .datatable .dt-caption .right { font-size: 1.2rem; color: #555; }
+  .datatable .dt-inner { background: #fff; margin: .3em 3px 0 3px; border-radius: 5px 5px 0 0; overflow: hidden; }
+  .datatable table { width: 100%; border-collapse: separate; border-spacing: 0; }
+  .datatable td, .datatable th { border-top: 1px solid #e1e1e1; border-right: 1px solid #e1e1e1; padding: .4em; font-size: 1.3rem;
+                                  text-align: center; vertical-align: middle; }
+  .datatable th { font-weight: bold; border-top: none; }
+  .datatable td:last-child, .datatable th:last-child { border-right: none; }
+  .datatable tr.dark td { background: #f8f8f8; }
+  .datatable td.left-aligned { text-align: left; }
+  .datatable tr:hover td { background: #f0f4fa; }
+  .problems td.id { border-left: 6px solid transparent; }
+  .problems td.id a { white-space: nowrap; }
+  .problems .name { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; text-align: left; }
+  .problems .name .tags { font-size: 1.1rem; text-align: right; color: #888; }
+  .problems td.act a { opacity: .45; } .problems td.act a:hover { opacity: 1; }
+  .problems tr.accepted-problem td.act { background: #d4edc9 !important; }
+  .problems tr.accepted-problem td.id { border-left-color: #d4edc9; }
+  .problems tr.rejected-problem td.act { background: #ffe3e3 !important; }
+  .problems tr.rejected-problem td.id { border-left-color: #ffe3e3; }
+  .problems tr.running-problem td.act { background: #def !important; }
+  .problems tr.running-problem td.id { border-left-color: #def; }
+  .empty-row td { padding: 2em !important; color: #888; }
+  th .sorter { color: #000; text-decoration: none; display: inline-flex; align-items: center; gap: 2px; }
+  th .sorter .arrow { font-size: 1rem; color: #888; }
+  th .sorter.on .arrow { color: #000; }
+
+  /* pagination */
+  .pagination { text-align: center; margin: 1.2em 0 .5em; font-size: 1.4rem; }
+  .pagination a, .pagination span { display: inline-block; margin: 0 1px; padding: .25em .4em; color: #000; text-decoration: none; font-weight: bold; }
+  .pagination .active { border: 1px solid #ddd; background: #eee; }
+  .pagination .arrow { font-size: 2rem; font-weight: normal; line-height: 1; padding: 0 .4em; }
+  .pagination .inactive { color: #ccc; }
+
+  /* verdicts */
+  .verdict-accepted { color: #0a0; font-weight: bold; }
+  .verdict-rejected { color: #00a; }
+  .verdict-failed { color: red; }
+  .verdict-waiting { color: gray; }
+  .verdict-waiting::after { content: ""; display: inline-block; width: 1.5em; text-align: left; animation: dots 1.2s steps(4) infinite; }
+  @keyframes dots { 0% { content: ""; } 25% { content: "."; } 50% { content: ".."; } 75% { content: "..."; } }
+
+  /* problem statement (Codeforces .problem-statement + .ttypography) */
+  .problem-statement { margin: .5em; font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; line-height: 1.5em;
+                       font-size: 1.4rem; color: #222; overflow-wrap: break-word; }
+  .problem-statement p { margin: 0 0 1em; line-height: 1.5em; }
+  .problem-statement .header { margin-bottom: 1em; text-align: center; }
+  .problem-statement .header .title { font-size: 150%; margin-bottom: .5em; line-height: 1.2; }
+  .problem-statement .header .property-title { display: inline; padding-right: 4px; }
+  .problem-statement .header .property-title::after { content: ":"; }
+  .problem-statement .legend { margin-bottom: 1em; }
+  .problem-statement .section-title { font-size: 115%; font-weight: bold; }
+  .problem-statement ul { margin: 1em 0; padding: 0; list-style: disc outside; }
+  .problem-statement li { margin-left: 3em; line-height: 1.5em; }
+  .problem-statement .sample-tests { font-family: Consolas, "Lucida Console", "Andale Mono", "Bitstream Vera Sans Mono", "Courier New", Courier, monospace;
+                                     font-size: .9em; margin-bottom: 1em; }
+  .problem-statement .sample-tests .section-title { font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; font-size: 1.15em; margin-bottom: .2em; }
+  .problem-statement .sample-test { margin-bottom: 1em; }
+  .problem-statement .sample-test .input, .problem-statement .sample-test .output { border: 1px solid #888; }
+  .problem-statement .sample-test .output { position: relative; top: -1px; }
+  .problem-statement .sample-test .title { font-size: 1.3em; padding: .25em; border-bottom: 1px solid #888; text-transform: lowercase; font-weight: bold; }
+  .problem-statement .sample-test pre { line-height: 1.25em; padding: .25em; margin: 0; background: #efefef; color: #800;
+                                         font-family: inherit; white-space: pre-wrap; overflow-wrap: anywhere; }
+  .input-output-copier { float: right; font-size: 1.2rem; color: #888; cursor: pointer; border: 1px solid #b9b9b9; padding: 3px;
+                         line-height: 1.1rem; text-transform: none; font-weight: normal; user-select: none; }
+  .input-output-copier:hover { background: #ddd; }
+  .problem-statement .katex { font-size: 1.12em; }
+
+  /* submit form */
+  .submit-form { padding: 1em; }
+  .submit-form table { border-collapse: collapse; width: 100%; }
+  .submit-form td { padding: .5em .5em; vertical-align: top; }
+  .submit-form td.field-name { width: 11em; text-align: right; padding-top: .7em; white-space: nowrap; }
+  .submit-form textarea { width: 100%; min-height: 22rem; padding: 6px; border: 1px solid #aaa; resize: vertical;
+                          font-family: Consolas, "Lucida Console", "Courier New", monospace; font-size: 1.3rem; line-height: 1.45; }
+  .submit-form .hint { font-size: 1.1rem; color: #888; margin-top: 3px; }
+  .submit-form .err { color: red; font-size: 1.2rem; }
+  .problem-resolved { font-size: 1.2rem; color: #555; margin-left: .5em; }
+
+  /* submission view */
+  .source { margin: 0; border: 1px solid #ccc; background: #f8f8f8; font-family: Consolas, "Lucida Console", "Courier New", monospace;
+            font-size: 1.3rem; line-height: 1.5; overflow-x: auto; counter-reset: line; padding: 4px 0; }
+  .source .ln { display: block; padding: 0 8px 0 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+  .source .ln::before { counter-increment: line; content: counter(line); display: inline-block; width: 3.2em; padding-right: .8em;
+                        margin-right: .6em; text-align: right; color: #999; border-right: 1px solid #ddd; }
+  .source .ln:nth-child(even) { background: #f0f0f0; }
+  .code { margin: 0; padding: .5em; background: #f8f8f8; border: 1px solid #ccc; font-family: Consolas, "Lucida Console", "Courier New", monospace;
+          font-size: 1.2rem; line-height: 1.4; overflow: auto; max-height: 50rem; }
+  .protocol { padding: .8em 1em; font-size: 1.3rem; }
+  .protocol .test-head { font-weight: bold; margin-bottom: .5em; }
+  .protocol .file-title { font-weight: bold; font-size: 1.2rem; margin: .8em 0 .2em; }
+  .protocol pre { margin: 0; padding: .3em .5em; background: #efefef; border: 1px solid #ccc; font-family: Consolas, "Lucida Console", monospace;
+                  font-size: 1.2rem; white-space: pre-wrap; overflow-wrap: anywhere; max-height: 30rem; overflow: auto; }
+  .comment { padding: .8em 1em; font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; line-height: 1.5; color: #222; }
+  .comment ul { margin: .3em 0 0 1.5em; padding: 0; }
+  .actions { margin: 1em 0; display: flex; gap: .8em; flex-wrap: wrap; }
+  .gap { height: 1.5em; }
+
+  /* help */
+  .ttypography { font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; line-height: 1.5; color: #222; padding: .5em 1em 1em; }
+  .ttypography h3 { font-weight: normal; font-size: 1.8rem; margin: 1em 0 .3em; color: #161e21; }
+  .ttypography table { border-collapse: collapse; margin: .5em 0; }
+  .ttypography td { border: 1px solid #ddd; padding: 4px 8px; vertical-align: top; }
+
+  /* growl notification (Codeforces pops one up when a verdict arrives) */
+  #growl { position: fixed; top: 12px; right: 12px; z-index: 50; display: flex; flex-direction: column; gap: 8px; }
+  .growl { width: 28rem; background: #fff; border: 1px solid #b9b9b9; border-radius: 6px; box-shadow: 0 2px 8px rgba(0,0,0,.18);
+           padding: .7em .9em; font-size: 1.3rem; }
+  .growl .x { float: right; cursor: pointer; color: #888; }
+
+  #footer { margin: 1.4rem 1.4rem 2rem; padding-top: 1.4rem; text-align: center; font-size: 1.2rem; line-height: 1.6; border-top: 1px solid #e1e1e1; }
+
+  @media (max-width: 760px) {
+    #main { flex-direction: column; align-items: stretch; }
+    #pageContent { margin: 1.4rem .4rem; }
+    #sidebar { width: auto; margin: 0 .4rem; }
+    .menu-box { overflow-x: auto; }
+    .logo .wordmark { font-size: 2.2rem; white-space: nowrap; }
+    .logo .tagline { display: none; }
+    .logo svg { width: 30px; height: 32px; }
+    .lang-chooser { font-size: 1.2rem; }
+    #header { min-height: 5rem; }
+    .submit-form td.field-name { width: auto; text-align: left; display: block; padding-bottom: 0; }
+    .submit-form td { display: block; }
+    .hide-narrow { display: none; }
+  }
 </style>
 </head>
 <body>
-<main>
-  <h1>Logic Judge</h1>
-  <p class="sub">Solve real Codeforces problems in plain English. No code needed.</p>
-
-  <div class="filters">
-    <label class="muted">Rating</label>
-    <select id="min"></select> <span class="muted">to</span> <select id="max"></select>
-    <input type="search" id="q" placeholder="Search title or contest">
-    <button id="random" title="Pick a random problem in this range">Random</button>
+<div id="header">
+  <a class="logo" href="#/">
+    <svg width="44" height="46" viewBox="0 0 44 46" aria-hidden="true">
+      <rect x="1" y="18" width="12" height="27" rx="2.5" fill="#f5c142"/>
+      <rect x="16" y="3" width="12" height="42" rx="2.5" fill="#1a8ad4"/>
+      <rect x="31" y="11" width="12" height="34" rx="2.5" fill="#d43546"/>
+    </svg>
+    <span class="words"><span class="wordmark">Logic Judge</span><span class="tagline">Codeforces in plain English</span></span>
+  </a>
+  <div class="lang-chooser">
+    <div><a href="#/status" class="who">My submissions</a> | <a href="#/help">Help</a></div>
   </div>
-  <div class="muted" id="count" style="margin-top:6px"></div>
-  <div class="card" id="listcard" style="margin-top:8px;padding:6px"><div id="list"></div></div>
+</div>
 
-  <div class="card" id="problem" hidden>
-    <h2 id="title" style="margin:0 0 6px;font-size:18px"></h2>
-    <div class="chips" id="chips"></div>
-    <div class="statement" id="statement"></div>
-    <p class="link muted" id="linkrow" hidden>Original: <a id="link" target="_blank" rel="noopener"></a></p>
-  </div>
+<div class="menu-box">
+  <ul class="menu-list" id="menu">
+    <li data-m="home"><a href="#/">Home</a></li>
+    <li data-m="problemset"><a href="#/problemset">Problemset</a></li>
+    <li data-m="submit"><a href="#/submit">Submit</a></li>
+    <li data-m="status"><a href="#/status">Status</a></li>
+    <li data-m="help"><a href="#/help">Help</a></li>
+  </ul>
+</div>
 
-  <div class="card" id="answer" hidden>
-    <label for="text"><strong>Your approach</strong>
-      <span class="muted"> &mdash; what you store, how you process things, why it works, the complexity.</span></label>
-    <textarea id="text" placeholder="e.g. I walk left to right keeping ... because ..."></textarea>
-    <div class="row">
-      <button class="primary" id="submit">Check my logic</button>
-      <button id="force" title="Skip the rubric check and go straight to running it against tests">Run anyway</button>
+<div id="main">
+  <div id="pageContent">
+    <div class="second-level-menu">
+      <ul id="submenu">
+        <li data-m="problemset"><a href="#/problemset">Problems</a></li>
+        <li data-m="submit"><a href="#/submit">Submit</a></li>
+        <li data-m="status"><a href="#/status">Status</a></li>
+      </ul>
     </div>
+    <div id="page"></div>
   </div>
+  <div id="sidebar"></div>
+</div>
 
-  <div class="card" id="result" hidden></div>
-</main>
+<div id="footer">
+  <div><a href="#/">Logic Judge</a> &mdash; practice real Codeforces problems by explaining your idea, not by typing code</div>
+  <div>Local time: <span id="clock"></span></div>
+</div>
+<div id="growl"></div>
 
 <script>
 const $ = id => document.getElementById(id);
-const esc = s => String(s == null ? '' : s).replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
-let current = null, timer = null;
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const pidPath = id => id.split('/').map(encodeURIComponent).join('/');
+const PER_PAGE = 100;
+const S = { subs: [], pending: new Set(), onSubs: null, shards: null };
 
-function fillSelects() {
-  const opts = ['<option value="">Any</option>'];
-  for (let r = 800; r <= 3500; r += 100) opts.push(`<option value="${r}">${r}</option>`);
-  $('min').innerHTML = opts.join(''); $('max').innerHTML = opts.join('');
+function store(key, val) {  // localStorage for small per-browser preferences; never required
+  try { if (val === undefined) return localStorage.getItem(key); localStorage.setItem(key, val); } catch (e) { return null; }
 }
 
-function params() {
-  const p = new URLSearchParams();
-  if ($('min').value) p.set('min', $('min').value);
-  if ($('max').value) p.set('max', $('max').value);
-  if ($('q').value.trim()) p.set('q', $('q').value.trim());
-  return p;
+async function api(url, opts) {
+  const r = await fetch(url, opts);
+  let d; try { d = await r.json(); } catch (e) { d = { error: `HTTP ${r.status}` }; }
+  return d;
 }
 
-async function refreshList() {
-  const d = await (await fetch('/api/problems?' + params())).json();
-  $('count').textContent = d.shards === 0
-    ? 'No Codeforces data downloaded yet. Showing starter problems only (see README).'
-    : `${d.total} problems` + (d.total > d.items.length ? ` (showing first ${d.items.length}, narrow the filter)` : '');
-  $('list').innerHTML = d.items.map(p =>
-    `<div class="item${p.id === current ? ' sel' : ''}" data-id="${esc(p.id)}">` +
-    `<span class="rate">${p.rating || ''}</span><span class="lbl">${esc(p.label)}</span><span>${esc(p.title)}</span></div>`
-  ).join('') || '<div class="muted" style="padding:8px">Nothing matches.</div>';
+function typeset(el) {
+  if (!el || !window.renderMathInElement) return;
+  renderMathInElement(el, { throwOnError: false, delimiters: [
+    { left: '$$$$$$', right: '$$$$$$', display: true }, { left: '$$$', right: '$$$', display: false }] });
 }
 
-async function load(id) {
-  const p = await (await fetch('/api/problem/' + id.split('/').map(encodeURIComponent).join('/'))).json();
-  if (p.error) return;
-  current = p.id;
-  $('title').textContent = p.title;
-  $('statement').textContent = p.statement;
-  let chips = '';
-  if (p.rating) chips += `<span class="chip r">Rating ${p.rating}</span>`;
-  if (p.contest_name) chips += `<span class="chip">${esc(p.contest_name)}${p.idx ? ' &middot; ' + esc(p.idx) : ''}</span>`;
-  chips += `<span class="chip">${p.time_limit}s &middot; ${p.memory_limit} MB</span>`;
-  if (p.input_mode === 'file') chips += '<span class="chip">uses input.txt / output.txt</span>';
-  if (p.verified === false) chips += '<span class="chip" title="The dataset could not run reference solutions on this problem, so its tests are less trustworthy">tests less verified</span>';
-  if (p.tags && p.tags.length) chips += `<button class="small" id="tagbtn">Reveal tags (spoiler)</button><span id="tags" style="display:none"></span>`;
-  $('chips').innerHTML = chips;
-  if (p.tags && p.tags.length) {
-    $('tags').style.display = 'none';
-    $('tagbtn').onclick = () => {
-      $('tags').innerHTML = p.tags.map(t => `<span class="chip">${esc(t)}</span>`).join('');
-      $('tags').style.display = 'contents'; $('tagbtn').remove();
+// ------------------------------------------------------------------ formatting
+const MON = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const pad = n => String(n).padStart(2, '0');
+function cfDate(t, secs) {
+  const d = new Date(t * 1000);
+  return `${MON[d.getMonth()]}/${pad(d.getDate())}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}` + (secs ? ':' + pad(d.getSeconds()) : '');
+}
+function plural(x, w) { x = +x; return `${x % 1 ? x : x.toFixed(0)} ${w}${x == 1 ? '' : 's'}`; }
+
+function verdict(s) {
+  if (s.status === 'running') return { text: 'Running', cls: 'verdict-waiting', ok: null };
+  const r = s.result || {};
+  if (r.error) return { text: 'Judgement failed', cls: 'verdict-failed', ok: false };
+  if (r.verdict === 'correct') return { text: 'Accepted', cls: 'verdict-accepted', ok: true };
+  const st = r.stages || [];
+  if (!r.executed) {
+    if (st.length === 1 && st[0] === 'gate')
+      return { text: r.verdict === 'wrong' ? 'Wrong idea' : 'Idea incomplete', cls: 'verdict-rejected', ok: false, gate: true };
+    if (st.some(x => x.startsWith('translate-2'))) return { text: 'Compilation error', cls: 'verdict-rejected', ok: false };
+    return { text: 'Description too vague', cls: 'verdict-rejected', ok: false };
+  }
+  const f = r.failure || {}, on = f.test ? ` on test ${f.test}` : '';
+  const k = { 'wrong output': 'Wrong answer', 'too slow': 'Time limit exceeded', 'crashed': 'Runtime error' }[f.kind] || 'Wrong answer';
+  return { text: k + on, cls: 'verdict-rejected', ok: false };
+}
+const VCLS = { Accepted: 'verdict-accepted', Running: 'verdict-waiting', 'Judgement failed': 'verdict-failed' };
+const vspan = s => { const v = verdict(s); return `<span class="${v.cls}">${esc(v.text)}</span>`; };
+
+function problemStatus() {  // problem_id -> 'accepted' | 'rejected' | 'running'
+  const m = {};
+  for (const s of S.subs) {
+    const v = verdict(s), cur = m[s.problem_id];
+    if (v.ok) m[s.problem_id] = 'accepted';
+    else if (cur !== 'accepted') m[s.problem_id] = v.ok === null ? (cur || 'running') : 'rejected';
+  }
+  return m;
+}
+
+// ------------------------------------------------------------------ building blocks
+const roundbox = (title, body, opts = {}) =>
+  `<div class="roundbox sidebox ${opts.cls || ''}" ${opts.id ? `id="${opts.id}"` : ''}>` +
+  (title ? `<div class="caption titled">&rarr; ${title}${opts.links ? `<span class="top-links">${opts.links}</span>` : ''}</div>` : '') +
+  body + '</div>';
+
+const datatable = (caption, right, tableHtml, cls = '') =>
+  `<div class="datatable"><div class="dt-caption"><span>${caption}</span><span class="right">${right || ''}</span></div>` +
+  `<div class="dt-inner"><table class="${cls}">${tableHtml}</table></div></div>`;
+
+function pagination(page, pages, href) {
+  if (pages <= 1) return '';
+  const nums = new Set([1, pages]);
+  for (let i = page - 2; i <= page + 2; i++) if (i >= 1 && i <= pages) nums.add(i);
+  const list = [...nums].sort((a, b) => a - b);
+  let h = '<div class="pagination">';
+  h += page > 1 ? `<a class="arrow" href="${href(page - 1)}">&larr;</a>` : '<span class="arrow inactive">&larr;</span>';
+  let prev = 0;
+  for (const n of list) {
+    if (n - prev > 1) h += '<span>...</span>';
+    h += n === page ? `<span class="active">${n}</span>` : `<a href="${href(n)}">${n}</a>`;
+    prev = n;
+  }
+  h += page < pages ? `<a class="arrow" href="${href(page + 1)}">&rarr;</a>` : '<span class="arrow inactive">&rarr;</span>';
+  return h + '</div>';
+}
+
+const plane = `<svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M1 7.5 15 1l-3.2 13.5-4-3.2-2.3 2.4v-3.5L13 3.2 4.6 9.6z" fill="none" stroke="#555" stroke-width="1.1" stroke-linejoin="round"/></svg>`;
+const bolt = `<svg width="13" height="16" viewBox="0 0 13 16" aria-hidden="true"><path d="M8 0 0 9h5l-1.5 7L13 6H7.5z" fill="#f6a723"/></svg>`;
+const check = `<svg width="15" height="14" viewBox="0 0 15 14" aria-hidden="true"><path d="M1 7.5 5.5 12 14 2" fill="none" stroke="#3ca53c" stroke-width="2.4"/></svg>`;
+
+// ------------------------------------------------------------------ problem statement
+function parseStatement(text) {
+  const out = { legend: '', sections: [], examples: [], note: '' };
+  const parts = String(text || '').replace(/\r/g, '').split(/\n\n(?=(?:Input|Output|Interaction|Note)\n|Examples? \d*\n?Input:\n)/);
+  out.legend = parts.shift() || '';
+  for (const part of parts) {
+    const ex = part.match(/^Examples? \d*\n?Input:\n([\s\S]*?)\nOutput:\n([\s\S]*)$/);
+    if (ex) { out.examples.push({ input: ex[1], output: ex[2] }); continue; }
+    const nl = part.indexOf('\n'), head = part.slice(0, nl), body = part.slice(nl + 1);
+    if (head === 'Note') out.note = body; else out.sections.push({ head, body });
+  }
+  return out;
+}
+
+function paragraphs(text) {
+  return String(text || '').trim().split(/\n{2,}/).map(block => {
+    const lines = block.split('\n');
+    if (lines.every(l => /^\s*([-*•]|\d+[.)])\s+/.test(l)))
+      return '<ul>' + lines.map(l => `<li>${esc(l.replace(/^\s*([-*•]|\d+[.)])\s+/, ''))}</li>`).join('') + '</ul>';
+    return `<p>${lines.map(esc).join('<br>')}</p>`;
+  }).join('');
+}
+
+function copier(text) { return `<div class="input-output-copier" data-copy="${esc(text)}">Copy</div>`; }
+
+function statementHtml(p) {
+  const st = parseStatement(p.statement);
+  const title = p.idx ? `${esc(p.idx)}. ${esc(p.title)}` : esc(p.title);
+  const file = p.input_mode === 'file';
+  let h = `<div class="problem-statement"><div class="header"><div class="title">${title}</div>` +
+    `<div class="time-limit"><div class="property-title">time limit per test</div>${plural(p.time_limit, 'second')}</div>` +
+    `<div class="memory-limit"><div class="property-title">memory limit per test</div>${plural(p.memory_limit, 'megabyte')}</div>` +
+    (file ? `<div><div class="property-title">input</div>input.txt</div><div><div class="property-title">output</div>output.txt</div>` : '') +
+    `</div><div class="legend">${paragraphs(st.legend)}</div>`;
+  for (const s of st.sections) h += `<div class="spec"><div class="section-title">${esc(s.head)}</div>${paragraphs(s.body)}</div>`;
+  if (st.examples.length) {
+    h += `<div class="sample-tests"><div class="section-title">${st.examples.length > 1 ? 'Examples' : 'Example'}</div>`;
+    for (const ex of st.examples)
+      h += `<div class="sample-test"><div class="input"><div class="title">Input${copier(ex.input)}</div><pre>${esc(ex.input)}</pre></div>` +
+           `<div class="output"><div class="title">Output${copier(ex.output)}</div><pre>${esc(ex.output)}</pre></div></div>`;
+    h += '</div>';
+  }
+  if (st.note.trim()) h += `<div class="note"><div class="section-title">Note</div>${paragraphs(st.note)}</div>`;
+  return h + '</div>';
+}
+
+// ------------------------------------------------------------------ submit form
+function submitFormHtml({ pid = '', label = '', text = '', skip = false, withProblem = false }) {
+  return `<form class="submit-form" id="submitForm" autocomplete="off"><table>` +
+    (withProblem ? `<tr><td class="field-name">Problem:</td><td><input type="text" id="sfProblem" value="${esc(label || pid)}" placeholder="e.g. 1520B or S1" style="width:12em">` +
+      `<span class="problem-resolved" id="sfResolved"></span></td></tr>` : '') +
+    `<tr><td class="field-name">Language:</td><td><select><option>Plain English (translated to C++17)</option></select></td></tr>` +
+    `<tr><td class="field-name">Your approach:</td><td><textarea id="sfText" maxlength="4000" placeholder="What do you store, how do you process the input, why is it correct, what is the complexity?">${esc(text)}</textarea>` +
+      `<div class="hint"><span id="sfCount">0</span>/4000 characters. Describe the algorithm; no code needed. Ctrl+Enter submits.</div></td></tr>` +
+    `<tr><td class="field-name"></td><td><label><input type="checkbox" id="sfSkip" ${skip ? 'checked' : ''}> Skip the rubric check and run against the tests directly</label></td></tr>` +
+    `<tr><td class="field-name"></td><td><button type="submit" id="sfBtn">Submit</button> <span class="err" id="sfErr"></span></td></tr>` +
+    `</table><input type="hidden" id="sfPid" value="${esc(pid)}"></form>`;
+}
+
+function bindSubmitForm() {
+  const form = $('submitForm'); if (!form) return;
+  const count = () => $('sfCount').textContent = $('sfText').value.length;
+  $('sfText').addEventListener('input', count); count();
+  $('sfText').addEventListener('keydown', e => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) form.requestSubmit(); });
+  if ($('sfProblem')) {
+    let t;
+    const resolveNow = async () => {
+      const v = $('sfProblem').value.trim(); $('sfPid').value = '';
+      if (!v) { $('sfResolved').textContent = ''; return; }
+      const p = await resolveProblem(v);
+      if (p) { $('sfPid').value = p.id; $('sfResolved').innerHTML = `<a href="#/problem/${pidPath(p.id)}">${esc(p.title)}</a>`; }
+      else $('sfResolved').innerHTML = '<span style="color:red">no such problem</span>';
     };
+    $('sfProblem').addEventListener('input', () => { clearTimeout(t); t = setTimeout(resolveNow, 250); });
+    resolveNow();
   }
-  $('linkrow').hidden = !p.link;
-  if (p.link) { $('link').href = p.link; $('link').textContent = p.link; }
-  $('problem').hidden = false; $('answer').hidden = false; $('result').hidden = true;
-  $('text').value = '';
-  document.querySelectorAll('.item').forEach(e => e.classList.toggle('sel', e.dataset.id === id));
-  $('problem').scrollIntoView({behavior: 'smooth', block: 'start'});
+  form.onsubmit = async e => {
+    e.preventDefault();
+    const pid = $('sfPid').value;
+    if (!pid) { $('sfErr').textContent = 'Choose a problem first.'; return; }
+    $('sfBtn').disabled = true; $('sfErr').textContent = '';
+    const d = await api('/api/submissions', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ problem_id: pid, text: $('sfText').value, skip_gate: $('sfSkip').checked }) });
+    $('sfBtn').disabled = false;
+    if (d.error) { $('sfErr').textContent = d.error; return; }
+    S.pending.add(d.id);
+    try { sessionStorage.removeItem('draft:' + pid); } catch (e) {}
+    await refreshSubs();
+    location.hash = '#/status';
+  };
+  // keep an unsent draft per problem in this tab
+  const pid0 = $('sfPid').value;
+  if (pid0 && !$('sfText').value) { try { $('sfText').value = sessionStorage.getItem('draft:' + pid0) || ''; count(); } catch (e) {} }
+  $('sfText').addEventListener('input', () => { const pid = $('sfPid').value; if (pid) try { sessionStorage.setItem('draft:' + pid, $('sfText').value); } catch (e) {} });
 }
 
-async function send(skip) {
-  const text = $('text').value;
-  $('submit').disabled = $('force').disabled = true;
-  $('result').hidden = false; $('result').innerHTML = '<span class="muted">Thinking&hellip;</span>';
+async function resolveProblem(v) {
+  const cands = [v];
+  const m = v.match(/^(\d+)\s*\/?\s*([A-Za-z]\d?)$/);
+  if (m) cands.unshift(`${m[1]}/${m[2].toUpperCase()}`);
+  if (/^s\d+$/i.test(v)) {
+    const d = await api('/api/problems?limit=50');
+    const hit = (d.items || []).find(i => i.label.toLowerCase() === v.toLowerCase());
+    if (hit) cands.unshift(hit.id);
+  }
+  for (const c of cands) {
+    const p = await api('/api/problem/' + pidPath(c));
+    if (!p.error) return p;
+  }
+  return null;
+}
+
+// ------------------------------------------------------------------ pages
+async function pageProblemset(q) {
+  const page = Math.max(1, +q.get('page') || 1), order = q.get('order') || 'new';
+  const min = q.get('min') || '', max = q.get('max') || '', search = q.get('q') || '';
+  const showTags = store('lj.showTags') === '1';
+  const p = new URLSearchParams({ limit: PER_PAGE, offset: (page - 1) * PER_PAGE, order });
+  if (min) p.set('min', min); if (max) p.set('max', max); if (search) p.set('q', search);
+  const d = await api('/api/problems?' + p);
+  S.shards = d.shards;
+  const href = (n, o = order) => {
+    const h = new URLSearchParams(); if (n > 1) h.set('page', n); if (o !== 'new') h.set('order', o);
+    if (min) h.set('min', min); if (max) h.set('max', max); if (search) h.set('q', search);
+    return '#/problemset' + (h.toString() ? '?' + h : '');
+  };
+  const counts = {}; for (const s of S.subs) counts[s.problem_id] = (counts[s.problem_id] || 0) + 1;
+
+  const renderTable = () => {
+    const status = problemStatus();
+    let rows = `<tr><th style="width:4.5em">#</th><th>Name</th><th style="width:3em" class="act-h"></th>` +
+      `<th style="width:4em" title="Difficulty"><a class="sorter ${order === 'rating' ? 'on' : ''}" href="${href(1, order === 'rating' ? 'new' : 'rating')}" title="${order === 'rating' ? 'Sorted by difficulty; click for newest first' : 'Sort by difficulty'}">${bolt}<span class="arrow">&#9650;&#9660;</span></a></th>` +
+      `<th style="width:4.5em" title="Your submissions">${check}</th></tr>`;
+    (d.items || []).forEach((it, i) => {
+      const cls = [i % 2 === 0 ? 'dark' : '', status[it.id] ? status[it.id] + '-problem' : ''].join(' ');
+      const url = '#/problem/' + pidPath(it.id);
+      const tags = showTags && it.tags && it.tags.length
+        ? `<div class="tags">${it.tags.map(esc).join(', ')}</div>` : '';
+      rows += `<tr class="${cls}"><td class="id"><a href="${url}">${esc(it.label)}</a></td>` +
+        `<td class="left-aligned"><div class="name"><a href="${url}">${esc(it.title)}</a>${tags}</div></td>` +
+        `<td class="act"><a href="#/submit/${pidPath(it.id)}" title="Submit">${plane}</a></td>` +
+        `<td>${it.rating ? `<span title="Difficulty">${it.rating}</span>` : ''}</td>` +
+        `<td>${counts[it.id] ? `<a href="#/status?problem=${encodeURIComponent(it.id)}" title="Your submissions">x${counts[it.id]}</a>` : ''}</td></tr>`;
+    });
+    if (!(d.items || []).length) rows += '<tr class="empty-row"><td colspan="5">No problems match the filter.</td></tr>';
+    const pages = Math.max(1, Math.ceil((d.total || 0) / PER_PAGE));
+    $('page').innerHTML = datatable('Problems', `${d.total || 0} problems`, rows, 'problems') + pagination(page, pages, href);
+  };
+  renderTable();
+  S.onSubs = renderTable;
+
+  const solved = Object.values(problemStatus()).filter(x => x === 'accepted').length;
+  const tried = Object.keys(problemStatus()).length;
+  $('sidebar').innerHTML =
+    roundbox('Pay attention', `<div class="inner" style="font-size:1.3rem;line-height:1.5">` +
+      (d.shards ? `Problems come from <b>${d.shards}</b> Codeforces data shard${d.shards > 1 ? 's' : ''} plus the starter set.`
+                : `No Codeforces data downloaded yet, so only the <b>starter problems</b> are listed. See the README to fetch shards into <code>data/</code>.`) +
+      `<br>Explain your idea in plain English; it is turned into a program and run on real tests.</div>`) +
+    roundbox('Filter Problems', `<form class="inner" id="filterForm">
+        <div class="filter-row"><label for="fMin">Difficulty:</label><span><input type="number" id="fMin" min="800" max="3500" step="100" value="${esc(min)}"> &mdash; <input type="number" id="fMax" min="800" max="3500" step="100" value="${esc(max)}"></span></div>
+        <div class="filter-row"><label for="fQ">Search:</label><input type="search" id="fQ" value="${esc(search)}" placeholder="title, id or contest"></div>
+        <div class="filter-row"><label><input type="checkbox" id="fTags" ${showTags ? 'checked' : ''}> Show tags</label><span class="small notice">tags can spoil the idea</span></div>
+        <div style="text-align:center;margin-top:1em;display:flex;gap:.6em;justify-content:center"><button type="submit">Apply</button><button type="button" id="fRandom" title="Random problem in this difficulty range">Random</button></div>
+        <div class="small" style="text-align:center;margin-top:.6em;color:red" id="fMsg"></div>
+      </form>`) +
+    roundbox('Your progress', `<table class="rtable"><tr><th class="left">Solved</th><th>Tried</th><th>Submissions</th></tr>` +
+      `<tr><td class="left"><span class="verdict-accepted">${solved}</span></td><td>${tried}</td><td><a href="#/status">${S.subs.length}</a></td></tr></table>`);
+  $('filterForm').onsubmit = e => {
+    e.preventDefault();
+    const h = new URLSearchParams();
+    if ($('fMin').value) h.set('min', $('fMin').value);
+    if ($('fMax').value) h.set('max', $('fMax').value);
+    if ($('fQ').value.trim()) h.set('q', $('fQ').value.trim());
+    if (order !== 'new') h.set('order', order);
+    location.hash = '#/problemset' + (h.toString() ? '?' + h : '');
+  };
+  $('fTags').onchange = () => { store('lj.showTags', $('fTags').checked ? '1' : '0'); render(); };
+  $('fRandom').onclick = async () => {
+    const r = new URLSearchParams(); if ($('fMin').value) r.set('min', $('fMin').value); if ($('fMax').value) r.set('max', $('fMax').value);
+    const x = await api('/api/random?' + r);
+    if (x.id) location.hash = '#/problem/' + pidPath(x.id); else $('fMsg').textContent = 'Nothing in this range.';
+  };
+}
+
+async function pageProblem(pid) {
+  const p = await api('/api/problem/' + pidPath(pid));
+  if (p.error) { $('page').innerHTML = `<div class="roundbox"><div class="inner">No such problem: ${esc(pid)}</div></div>`; $('sidebar').innerHTML = ''; return; }
+  document.title = `Problem - ${p.label} - Logic Judge`;
+  $('page').innerHTML = `<div class="problemindexholder">${statementHtml(p)}</div>` +
+    roundbox('Submit your approach', submitFormHtml({ pid: p.id }), { id: 'submitBox' });
+  typeset($('page'));
+  bindSubmitForm();
+
+  const flags = [];
+  if (p.input_mode === 'file') flags.push('This problem reads <b>input.txt</b> and writes <b>output.txt</b> instead of standard input/output.');
+  if (p.verified === false) flags.push('The dataset could not run reference solutions on this problem, so its tests are <b>less verified</b>.');
+  if (p.capped) flags.push('Some very large tests were dropped to save space, so a too-slow idea might still pass.');
+  const tags = (p.tags || []).map(t => `<span class="tag-box">${esc(t)}</span>`).join('') + (p.rating ? `<span class="tag-box" title="Difficulty">*${p.rating}</span>` : '');
+  const contest = `<div class="roundbox sidebox"><table class="rtable"><tr><th class="left">` +
+    (p.link ? `<a style="color:black" href="${esc(p.link)}" target="_blank" rel="noopener">${esc(p.contest_name || 'Problem')}</a>` : esc(p.contest_name || 'Starter problems')) +
+    `</th></tr><tr><td class="left"><span class="contest-state-phase">Practice</span></td></tr></table></div>`;
+  const lastSubs = () => {
+    const mine = S.subs.filter(s => s.problem_id === p.id).slice(0, 8);
+    return mine.length
+      ? `<table class="rtable"><tr><th class="left">Submission</th><th>Time</th><th>Verdict</th></tr>` +
+        mine.map(s => `<tr><td class="left"><a href="#/submission/${s.id}">${s.id}</a></td><td class="small">${cfDate(s.when)}</td><td class="small">${vspan(s)}</td></tr>`).join('') + '</table>'
+      : '<div class="inner small notice" style="text-align:center">No submissions yet.</div>';
+  };
+  $('sidebar').innerHTML = contest +
+    (flags.length ? roundbox('Attention', `<div style="margin:1em;font-size:1.3rem">${flags.join('<br><br>')}</div>`, { cls: 'highlight-blue' }) : '') +
+    roundbox('Submit?', `<div class="inner" style="text-align:center;font-size:1.3rem">Language: <b>Plain English</b><div style="margin-top:.6em"><button type="button" id="goSubmit">Write approach</button></div></div>`) +
+    roundbox('Last submissions', `<div id="lastSubs">${lastSubs()}</div>`, { links: `<a href="#/status?problem=${encodeURIComponent(p.id)}">all</a>` }) +
+    (tags ? roundbox('Problem tags', `<div class="inner"><div id="tagList" class="hidden">${tags}</div><div id="tagHide" style="text-align:center"><a href="#" id="tagShow" class="small">Show tags (spoiler)</a></div></div>`) : '') +
+    (p.link ? roundbox('Original', `<div class="inner small" style="overflow-wrap:anywhere"><a href="${esc(p.link)}" target="_blank" rel="noopener">${esc(p.link)}</a></div>`) : '');
+  $('goSubmit').onclick = () => { $('submitBox').scrollIntoView({ behavior: 'smooth', block: 'start' }); setTimeout(() => $('sfText').focus(), 300); };
+  if ($('tagShow')) $('tagShow').onclick = e => { e.preventDefault(); $('tagList').classList.remove('hidden'); $('tagHide').remove(); };
+  S.onSubs = () => { if ($('lastSubs')) $('lastSubs').innerHTML = lastSubs(); };
+}
+
+async function pageSubmit(pid, q) {
+  document.title = 'Submit - Logic Judge';
+  let text = '', skip = false, label = '';
+  const from = +q.get('from');
+  if (from) { const s = await api('/api/submission/' + from); if (!s.error) { text = s.text; pid = pid || s.problem_id; skip = q.get('skip') === '1'; } }
+  if (pid) { const p = await api('/api/problem/' + pidPath(pid)); if (!p.error) label = p.label; }
+  $('page').innerHTML = roundbox('Submit solution', submitFormHtml({ pid, label, text, skip, withProblem: true }));
+  bindSubmitForm();
+  $('sidebar').innerHTML = roundbox('How to write it', `<div class="inner" style="font-size:1.3rem;line-height:1.55">
+    Say what you <b>store</b>, how you <b>process</b> the input step by step, <b>why</b> it is correct, and the <b>complexity</b>.
+    <br><br>Your text is translated to C++ <i>exactly as written</i> (mistakes included) and run on the tests with the real limits.
+    <br><br>Problem codes look like <b>1520B</b>; starter problems are <b>S1</b>, <b>S2</b>, ...</div>`);
+  S.onSubs = null;
+}
+
+async function pageStatus(q) {
+  const filter = q.get('problem') || '', page = Math.max(1, +q.get('page') || 1), per = 50;
+  document.title = 'My submissions - Logic Judge';
+  const renderTable = () => {
+    const list = filter ? S.subs.filter(s => s.problem_id === filter) : S.subs;
+    let rows = `<tr><th style="width:5em">#</th><th style="width:11em">When</th><th>Problem</th><th class="hide-narrow" style="width:8em">Lang</th><th style="width:18em">Verdict</th></tr>`;
+    list.slice((page - 1) * per, page * per).forEach((s, i) => {
+      rows += `<tr class="${i % 2 === 0 ? 'dark' : ''}"><td><a href="#/submission/${s.id}">${s.id}</a></td>` +
+        `<td class="small" style="white-space:nowrap">${cfDate(s.when)}</td>` +
+        `<td class="left-aligned"><a href="#/problem/${pidPath(s.problem_id)}">${esc(s.label)} - ${esc(s.title)}</a></td>` +
+        `<td class="hide-narrow small">English</td><td><a href="#/submission/${s.id}" style="text-decoration:none">${vspan(s)}</a></td></tr>`;
+    });
+    if (!list.length) rows += `<tr class="empty-row"><td colspan="5">No submissions yet. Pick a problem from the <a href="#/problemset">problemset</a>.</td></tr>`;
+    const pages = Math.max(1, Math.ceil(list.length / per));
+    const href = n => '#/status?' + new URLSearchParams({ ...(filter ? { problem: filter } : {}), ...(n > 1 ? { page: n } : {}) });
+    $('page').innerHTML = datatable(filter ? `My submissions &middot; ${esc(filter)} <a class="small" href="#/status">(show all)</a>` : 'My submissions',
+      `${list.length} total`, rows, 'status') + pagination(page, pages, href);
+    const counts = {};
+    for (const s of S.subs) { const v = verdict(s).text.replace(/ on test \d+/, ''); counts[v] = (counts[v] || 0) + 1; }
+    $('sidebar').innerHTML = roundbox('Verdicts', Object.keys(counts).length
+      ? `<table class="rtable">` + Object.entries(counts).sort((a, b) => b[1] - a[1]).map(([k, n]) =>
+          `<tr><td class="left" style="text-align:left"><span class="${VCLS[k] || 'verdict-rejected'}">${esc(k)}</span></td><td style="width:4em">${n}</td></tr>`).join('') + '</table>'
+      : '<div class="inner small notice">Nothing yet.</div>');
+  };
+  renderTable();
+  S.onSubs = renderTable;
+}
+
+async function pageSubmission(id) {
+  const s = await api('/api/submission/' + id);
+  if (s.error) { $('page').innerHTML = `<div class="roundbox"><div class="inner">No submission #${esc(id)}</div></div>`; $('sidebar').innerHTML = ''; return; }
+  document.title = `Submission #${s.id} - Logic Judge`;
+  const r = s.result || {}, v = verdict(s);
+  let h = datatable(`Submission #${s.id}`, '',
+    `<tr><th>#</th><th>Problem</th><th class="hide-narrow">Lang</th><th>Verdict</th><th class="hide-narrow">Sent</th></tr>` +
+    `<tr class="dark"><td>${s.id}</td><td class="left-aligned"><a href="#/problem/${pidPath(s.problem_id)}">${esc(s.label)} - ${esc(s.title)}</a></td>` +
+    `<td class="hide-narrow small">English${s.skip_gate ? ' (no rubric)' : ''}</td><td>${vspan(s)}</td><td class="hide-narrow small">${cfDate(s.when, true)}</td></tr>`);
+  h += '<div class="gap"></div>' + roundbox('Your approach', `<div class="source">${s.text.split('\n').map(l => `<span class="ln">${esc(l) || ' '}</span>`).join('')}</div>`);
+  if (s.status === 'running') {
+    h += roundbox("Judge's comment", `<div class="comment"><span class="verdict-waiting">Judging</span> Checking the idea, translating it and running the tests. This page updates by itself.</div>`);
+  } else {
+    let c = r.error ? `<p class="verdict-failed">${esc(r.error)}</p>` : `<p>${esc(r.feedback || '')}</p>`;
+    if (r.missing && r.missing.length) c += '<div><b>Not covered yet:</b></div><ul>' + r.missing.map(m => `<li>${esc(m)}</li>`).join('') + '</ul>';
+    if (r.hint) c += `<p class="notice">${esc(r.hint)}</p>`;
+    if (r.cached) c += `<p class="notice">Same text as an earlier submission; cached result.</p>`;
+    h += roundbox("Judge's comment", `<div class="comment">${c}</div>`);
+    if (r.failure) {
+      const f = r.failure;
+      let pr = `<div class="test-head">Test: #${f.test || '?'}, verdict: <span class="${v.cls}">${esc(v.text.replace(/ on test \d+/, ''))}</span></div>`;
+      if (f.input) pr += `<div class="file-title">Input</div><pre>${esc(f.input)}</pre>`;
+      if (f.got !== undefined) pr += `<div class="file-title">Output</div><pre>${esc(f.got)}</pre>`;
+      if (f.expected) pr += `<div class="file-title">Answer</div><pre>${esc(f.expected)}</pre>`;
+      if (f.detail) pr += `<div class="file-title">Checker Log</div><pre>${esc(f.detail)}</pre>`;
+      h += roundbox('Judgement Protocol', `<div class="protocol">${pr}</div>`);
+    }
+    if (r.code) h += roundbox('How your approach was understood', `<div class="inner"><details><summary class="small" style="cursor:pointer">Show generated program</summary><pre class="code">${esc(r.code)}</pre></details></div>`);
+    h += `<div class="actions"><a class="btn" href="#/submit/${pidPath(s.problem_id)}?from=${s.id}">Edit and resubmit</a>` +
+         (v.gate ? `<button id="runAnyway" title="Skip the rubric check and run this exact text against the tests">Run anyway</button>` : '') +
+         `<a class="btn" href="#/problem/${pidPath(s.problem_id)}">Back to problem</a></div>`;
+  }
+  $('page').innerHTML = h;
+  if ($('runAnyway')) $('runAnyway').onclick = async () => {
+    $('runAnyway').disabled = true;
+    const d = await api('/api/submissions', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ problem_id: s.problem_id, text: s.text, skip_gate: true }) });
+    if (d.error) { alert(d.error); $('runAnyway').disabled = false; return; }
+    S.pending.add(d.id); await refreshSubs(); location.hash = '#/status';
+  };
+  const M = r.models || {};
+  const stages = (r.stages || []).map(x => ({
+    gate: ['Rubric check', M.judge], 'translate-1': ['Translation #1 + tests', M.judge],
+    'translate-2': ['Translation #2 + tests', M.retry],
+    'translate-2-fallback': ['Translation #2 + tests', `${M.judge || ''} (${M.retry || 'second model'} was unavailable)`] }[x] || [x]));
+  $('sidebar').innerHTML = roundbox('Judging stages', stages.length
+    ? `<table class="rtable">${stages.map(([x, m], i) => `<tr><td class="left" style="width:2em">${i + 1}</td><td style="text-align:left">${esc(x)}` +
+        (m ? `<div class="small notice">${esc(m)}</div>` : '') + `</td></tr>`).join('')}</table>`
+    : `<div class="inner small notice">${s.status === 'running' ? 'In progress...' : 'None'}</div>`) +
+    roundbox('Verdicts', `<div class="inner small" style="line-height:1.6"><a href="#/help">What the verdicts mean</a></div>`);
+  S.onSubs = s.status === 'running' ? () => { const n = S.subs.find(x => x.id === s.id); if (n && n.status !== 'running') render(); } : null;
+}
+
+function pageHelp() {
+  document.title = 'Help - Logic Judge';
+  const V = (cls, t) => `<span class="${cls}">${t}</span>`;
+  $('page').innerHTML = roundbox('How judging works', `<div class="ttypography">
+    <p>You solve real Codeforces problems by <b>describing your approach in plain English</b>. No code.</p>
+    <h3>1. Rubric check</h3><p>A model compares your text with a hidden rubric built from the official editorial (key idea, complexity, edge cases). Clear misses are rejected right away and nothing is run. If you think it was too strict, open the submission and press <b>Run anyway</b>, or tick "Skip the rubric check" when submitting.</p>
+    <h3>2. Translate and run</h3><p>Your description is turned into a C++ program <i>exactly as written</i>: mistakes are not fixed for you. It runs on the problem's tests with the real time and memory limits, smallest tests first.</p>
+    <h3>3. Second opinion</h3><p>If it fails, a fresh independent translation is tried before you are told you are wrong.</p>
+    <h3>Verdicts</h3><table>
+      <tr><td>${V('verdict-accepted', 'Accepted')}</td><td>Passed every test.</td></tr>
+      <tr><td>${V('verdict-rejected', 'Wrong answer on test N')}</td><td>Both translations printed a wrong answer; the smallest failing test is shown.</td></tr>
+      <tr><td>${V('verdict-rejected', 'Time limit exceeded on test N')}</td><td>The idea is too slow for the limits.</td></tr>
+      <tr><td>${V('verdict-rejected', 'Runtime error on test N')}</td><td>The described program crashed (out of bounds, too deep recursion, out of memory, ...).</td></tr>
+      <tr><td>${V('verdict-rejected', 'Wrong idea')} / ${V('verdict-rejected', 'Idea incomplete')}</td><td>Rejected by the rubric check; nothing was run.</td></tr>
+      <tr><td>${V('verdict-rejected', 'Description too vague')}</td><td>A key step is missing, so it could not be implemented without guessing.</td></tr>
+      <tr><td>${V('verdict-rejected', 'Compilation error')}</td><td>Twice, no working program could be built from the description.</td></tr>
+      <tr><td>${V('verdict-failed', 'Judgement failed')}</td><td>Something went wrong on our side (API key, network, ...).</td></tr>
+    </table></div>`);
+  $('sidebar').innerHTML = roundbox('Tips', `<div class="inner" style="font-size:1.3rem;line-height:1.55">State what you store, how you update it, why it is correct, and the complexity. Mention edge cases (n = 1, all equal, negative numbers, overflow).</div>`);
+  S.onSubs = null;
+}
+
+// ------------------------------------------------------------------ router, polling, notifications
+function route() {
+  const h = location.hash.replace(/^#\/?/, '');
+  const [path, qs] = h.split('?');
+  return { parts: path.split('/').filter(Boolean).map(decodeURIComponent), q: new URLSearchParams(qs || '') };
+}
+
+let renderSeq = 0;
+async function render() {
+  const { parts, q } = route(), seq = ++renderSeq;
+  const top = parts[0] || 'problemset';
+  const m = { problem: 'problemset', submission: 'status' }[top] || top;
+  document.querySelectorAll('#menu li').forEach(li => li.classList.toggle('current', li.dataset.m === m));
+  document.querySelectorAll('#submenu li').forEach(li => li.classList.toggle('current', li.dataset.m === m));
+  document.title = 'Logic Judge';
+  S.onSubs = null;
+  const rest = parts.slice(1).join('/');
   try {
-    const r = await fetch('/api/submit', { method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ problem_id: current, text, skip_gate: skip }) });
-    render(await r.json());
-  } catch (e) { $('result').textContent = 'Request failed: ' + e; }
-  $('submit').disabled = $('force').disabled = false;
-}
-
-function render(d) {
-  if (d.error) { $('result').innerHTML = `<span class="wrong">${esc(d.error)}</span>`; return; }
-  let h = `<div class="verdict ${d.verdict}">${{correct:'Correct', wrong:'Wrong', partial:'Almost / incomplete'}[d.verdict]}</div>`;
-  h += `<p>${esc(d.feedback || '')}</p>`;
-  if (d.missing && d.missing.length) h += '<div class="muted">Not covered yet:</div><ul>' + d.missing.map(m => `<li>${esc(m)}</li>`).join('') + '</ul>';
-  if (d.failure) {
-    const f = d.failure;
-    h += `<div class="muted" style="margin-top:10px">Smallest failing case (${esc(f.kind)}):</div>`;
-    h += `<pre>input:\n${esc(f.input)}\n\nexpected: ${esc(f.expected)}` +
-         (f.got !== undefined ? `\nyour approach gave: ${esc(f.got)}` : '') +
-         (f.detail ? `\n${esc(f.detail)}` : '') + '</pre>';
+    await refreshSubs();
+    if (seq !== renderSeq) return;
+    if (top === 'problem' && rest) await pageProblem(rest);
+    else if (top === 'submit') await pageSubmit(rest, q);
+    else if (top === 'status') await pageStatus(q);
+    else if (top === 'submission' && rest) await pageSubmission(+rest);
+    else if (top === 'help') pageHelp();
+    else { document.title = 'Problemset - Logic Judge'; await pageProblemset(q); }
+  } catch (e) {
+    if (seq === renderSeq) $('page').innerHTML = `<div class="roundbox"><div class="inner verdict-failed">Could not load the page: ${esc(e.message || e)}. Is the server running?</div></div>`;
   }
-  if (d.hint) h += `<p class="muted">${esc(d.hint)}</p>`;
-  if (d.code) h += `<details><summary>How your approach was understood (generated code)</summary><pre>${esc(d.code)}</pre></details>`;
-  if (d.cached) h += '<p class="muted">(Same submission as before, cached result.)</p>';
-  $('result').innerHTML = h;
+  if (seq === renderSeq && !location.hash.includes('#/problem/')) window.scrollTo(0, 0);
 }
 
-$('list').onclick = e => { const it = e.target.closest('.item'); if (it) load(it.dataset.id); };
-$('min').onchange = $('max').onchange = refreshList;
-$('q').oninput = () => { clearTimeout(timer); timer = setTimeout(refreshList, 250); };
-$('random').onclick = async () => {
-  const d = await (await fetch('/api/random?' + params())).json();
-  if (d.id) load(d.id); else $('count').textContent = 'Nothing in this range.';
-};
-$('submit').onclick = () => send(false);
-$('force').onclick = () => send(true);
-fillSelects(); refreshList();
+function growl(s) {
+  const el = document.createElement('div');
+  el.className = 'growl';
+  el.innerHTML = `<span class="x" title="Close">&times;</span><div><a href="#/problem/${pidPath(s.problem_id)}">${esc(s.label)} - ${esc(s.title)}</a></div>` +
+    `<div style="margin-top:.3em">${vspan(s)} &middot; <a href="#/submission/${s.id}">details</a></div>`;
+  el.querySelector('.x').onclick = () => el.remove();
+  el.querySelectorAll('a').forEach(a => a.addEventListener('click', () => el.remove()));
+  $('growl').appendChild(el);
+  setTimeout(() => el.remove(), 15000);
+}
+
+let pollTimer = null;
+async function refreshSubs() {
+  const d = await api('/api/submissions');
+  const prev = new Map(S.subs.map(s => [s.id, s.status]));
+  S.subs = d.items || [];
+  for (const s of S.subs)
+    if (s.status === 'done' && (S.pending.has(s.id) || prev.get(s.id) === 'running')) { S.pending.delete(s.id); growl(s); }
+  clearTimeout(pollTimer);
+  if (S.subs.some(s => s.status === 'running')) pollTimer = setTimeout(async () => { await refreshSubs(); if (S.onSubs) S.onSubs(); }, 1500);
+}
+
+document.addEventListener('click', e => {
+  const c = e.target.closest('.input-output-copier');
+  if (!c) return;
+  navigator.clipboard && navigator.clipboard.writeText(c.dataset.copy).then(() => {
+    c.textContent = 'Copied!'; setTimeout(() => c.textContent = 'Copy', 1200);
+  });
+});
+setInterval(() => $('clock').textContent = cfDate(Date.now() / 1000, true), 1000);
+$('clock').textContent = cfDate(Date.now() / 1000, true);
+window.addEventListener('hashchange', render);
+render();
 </script>
 </body>
 </html>

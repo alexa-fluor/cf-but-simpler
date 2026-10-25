@@ -138,7 +138,7 @@ def run_tests(code, tests, lang=None, time_limit=3.0, mem_mb=256, checker_source
             if good:
                 passed += 1
                 continue
-            f = {"input": _short(t["input"]), "expected": _short(t["output"].strip())}
+            f = {"input": _short(t["input"]), "expected": _short(t["output"].strip()), "test": passed + 1}
             if status == "timeout":
                 f.update(kind="too slow",
                          detail=f"Did not finish within {limit:.1f}s on an input of {len(t['input'])} characters.")

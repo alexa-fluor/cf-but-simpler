@@ -52,8 +52,9 @@ def parse_rating(v):
 
 
 def clean_math(s):
-    # Codeforces marks inline math with $$$...$$$; drop the markers for readability.
-    return (s or "").replace("$$$", "").strip()
+    # Codeforces marks inline math with $$$...$$$. The markers are kept: the web page typesets
+    # them (KaTeX) and the models read them as LaTeX.
+    return (s or "").strip()
 
 
 def build_statement(row):

@@ -18,9 +18,10 @@ class Store:
 
     def refresh(self):
         self.starters = {}
-        for path in sorted(glob.glob(os.path.join(self.base, "problems", "*.json"))):
+        for i, path in enumerate(sorted(glob.glob(os.path.join(self.base, "problems", "*.json"))), 1):
             with open(path) as f:
                 p = json.load(f)
+            p["label"] = f"S{i}"
             p.setdefault("rating", None)
             p.setdefault("tags", [])
             p.setdefault("time_limit", 3.0)
@@ -40,7 +41,9 @@ class Store:
     def shard_count(self):
         return len(self.shards)
 
-    def list(self, min_rating=None, max_rating=None, q="", limit=300):
+    def list(self, min_rating=None, max_rating=None, q="", limit=300, offset=0, order="rating"):
+        """order: "rating" (starters, then by rating, unrated last) or "new" (newest contest
+        first, like the Codeforces problemset; starters last)."""
         q = (q or "").strip().lower()
         rated_filter = min_rating is not None or max_rating is not None
         out = []
@@ -48,12 +51,12 @@ class Store:
             for p in self.starters.values():
                 if q and q not in p["title"].lower():
                     continue
-                out.append({"id": p["id"], "title": p["title"], "rating": None,
-                            "label": "starter", "source": "starter"})
+                out.append({"id": p["id"], "title": p["title"], "rating": None, "tags": [],
+                            "contest_id": 0, "idx": p["label"], "label": p["label"], "source": "starter"})
         for path in self.shards:
             db = self._connect(path)
             # A rating filter automatically excludes unrated problems (NULL never compares true).
-            sql = "SELECT id, contest_id, idx, title, rating FROM problems WHERE 1=1"
+            sql = "SELECT id, contest_id, idx, title, rating, tags FROM problems WHERE 1=1"
             args = []
             if min_rating is not None:
                 sql += " AND rating >= ?"; args.append(min_rating)
@@ -62,14 +65,17 @@ class Store:
             if q:
                 sql += " AND (lower(title) LIKE ? OR id LIKE ? OR lower(contest_name) LIKE ?)"
                 args += [f"%{q}%", f"%{q}%", f"%{q}%"]
-            for pid, cid, idx, title, rating in db.execute(sql, args):
-                out.append({"id": pid, "title": title, "rating": rating,
-                            "label": f"{cid}{idx}", "source": "cf"})
+            for pid, cid, idx, title, rating, tags in db.execute(sql, args):
+                out.append({"id": pid, "title": title, "rating": rating, "tags": json.loads(tags or "[]"),
+                            "contest_id": cid, "idx": idx, "label": f"{cid}{idx}", "source": "cf"})
             db.close()
-        # starters first, then rated problems by rating, unrated Codeforces problems last
-        out.sort(key=lambda r: (0 if r["source"] == "starter" else (1 if r["rating"] is not None else 2),
-                                r["rating"] or 0, r["label"]))
-        return out[:limit], len(out)
+        if order == "new":
+            out.sort(key=lambda r: (r["source"] == "starter", -(r["contest_id"] or 0), r["idx"] or ""))
+        else:
+            # starters first, then rated problems by rating, unrated Codeforces problems last
+            out.sort(key=lambda r: (0 if r["source"] == "starter" else (1 if r["rating"] is not None else 2),
+                                    r["rating"] or 0, r["label"]))
+        return out[offset:offset + limit], len(out)
 
     def get(self, pid):
         if pid in self.starters:

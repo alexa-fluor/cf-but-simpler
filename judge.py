@@ -1,22 +1,27 @@
 """Two-stage judge: (1) rubric gate, (2) plain English -> program -> run against tests.
 
 Every model call is a fresh, stateless request, so a retry is always a "fresh session".
+Models are reached through their command-line tools, using your own logins (no API keys).
 """
 import hashlib
 import json
 import os
 import re
-
-import anthropic
+import subprocess
+import tempfile
 
 import sandbox
 from sandbox import run_tests
 
-# Override with env vars. RETRY_MODEL is used for the second translation attempt
-# (a different model gives a more independent second opinion; the same model still
-# gives a fresh sample).
-JUDGE_MODEL = os.environ.get("JUDGE_MODEL", "claude-haiku-5-5")
-RETRY_MODEL = os.environ.get("RETRY_MODEL", JUDGE_MODEL)
+# Models are "<tool>:<model id>":
+#   claude:<id>  Claude Code CLI (`claude -p`), uses your Claude login
+#   codex:<id>   OpenAI Codex CLI (`codex exec`), uses your ChatGPT login
+#   api:<id>     Anthropic API (needs ANTHROPIC_API_KEY)
+# JUDGE_MODEL writes rubrics, runs the rubric gate and the first translation. RETRY_MODEL does
+# the second translation; a different model gives a more independent second opinion.
+JUDGE_MODEL = os.environ.get("JUDGE_MODEL", "claude:claude-haiku-5-5")
+RETRY_MODEL = os.environ.get("RETRY_MODEL", "codex:gpt-6-luna")
+CLI_TIMEOUT = int(os.environ.get("CLI_TIMEOUT", "300"))
 
 USER_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "user")
 CACHE_PATH = os.path.join(USER_DIR, "cache.json")
@@ -56,18 +61,48 @@ Reply with JSON only:
  "common_wrong": ["tempting approaches that fail, and why"]}"""
 
 
-def _client():
-    return anthropic.Anthropic()
+def _split(model):
+    """"codex:gpt-6-luna" -> ("codex", "gpt-6-luna"). A bare id picks the tool by its name."""
+    tool, sep, name = model.partition(":")
+    if sep and tool in ("claude", "codex", "api"):
+        return tool, name
+    return ("codex" if model.startswith(("gpt", "o3", "o4")) else "claude"), model
+
+
+def _cli(cmd, stdin, workdir):
+    try:
+        p = subprocess.run(cmd, input=stdin, capture_output=True, text=True, cwd=workdir, timeout=CLI_TIMEOUT)
+    except FileNotFoundError:
+        raise RuntimeError(f"`{cmd[0]}` is not installed or not on PATH (see README: Run the app)")
+    except subprocess.TimeoutExpired:
+        raise RuntimeError(f"`{cmd[0]}` did not answer within {CLI_TIMEOUT}s")
+    if p.returncode != 0:
+        tail = (p.stderr or p.stdout).strip()[-600:]
+        raise RuntimeError(f"`{cmd[0]}` failed (exit {p.returncode}); is it logged in? {tail}")
+    return p.stdout
 
 
 def ask(model, system, user, max_tokens=1500):
-    r = _client().messages.create(
-        model=model,
-        max_tokens=max_tokens,
-        system=system,
-        messages=[{"role": "user", "content": user}],
-    )
-    return "".join(b.text for b in r.content if b.type == "text")
+    tool, name = _split(model)
+    if tool == "api":
+        import anthropic  # only needed for the API route
+
+        r = anthropic.Anthropic().messages.create(
+            model=name, max_tokens=max_tokens, system=system, messages=[{"role": "user", "content": user}])
+        return "".join(b.text for b in r.content if b.type == "text")
+    # Run in an empty folder so neither CLI picks up project files or instructions.
+    with tempfile.TemporaryDirectory(prefix="lj_") as d:
+        if tool == "claude":
+            return _cli(["claude", "-p", "--model", name, "--system-prompt", system, "--tools", "",
+                         "--strict-mcp-config", "--no-session-persistence", "--output-format", "text"], user, d)
+        # codex exec has no system-prompt flag; the instructions go first in the prompt.
+        out = os.path.join(d, "answer.txt")
+        prompt = (f"<instructions>\n{system}\n</instructions>\n\n{user}\n\n"
+                  "Answer in your reply only. Do not run commands or create files.")
+        _cli(["codex", "exec", "-m", name, "--skip-git-repo-check", "--ephemeral", "-s", "read-only",
+              "-o", out, "-"], prompt, d)
+        with open(out) as f:
+            return f.read()
 
 
 def _extract_json(text):
@@ -157,6 +192,7 @@ def judge(problem, submission, skip_gate=False, get_tests=None):
     if key in cache:
         return {**cache[key], "cached": True}
     result = _judge(problem, submission, skip_gate, get_tests or (lambda: problem["tests"]), lang)
+    result["models"] = {"judge": JUDGE_MODEL, "retry": RETRY_MODEL}
     cache[key] = result
     _save(CACHE_PATH, cache)
     return result
@@ -206,8 +242,12 @@ def _judge(problem, submission, skip_gate, get_tests, lang):
 
     # Failed. Before blaming the student, get an independent second translation
     # (fresh request, possibly a different model) in case the translator slipped.
-    code2, _ = translate(problem, submission, RETRY_MODEL, lang)
-    stages.append("translate-2")
+    try:
+        code2, _ = translate(problem, submission, RETRY_MODEL, lang)
+        stages.append("translate-2")
+    except Exception:  # second tool missing or logged out: take a fresh sample from the first model
+        code2, _ = translate(problem, submission, JUDGE_MODEL, lang)
+        stages.append("translate-2-fallback")
     if code2 is not None:
         r2 = _run(problem, code2, tests, lang)
         if r2["passed"]:

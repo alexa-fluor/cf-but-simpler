@@ -1,0 +1,16 @@
+{
+  // GitHub Codespaces: runs the whole app (data, C++ compiling, model CLIs) on GitHub's machine.
+  // Code -> Codespaces -> Create codespace on main. See README "Run it on GitHub (Codespaces)".
+  "name": "Logic Judge",
+  "image": "mcr.microsoft.com/devcontainers/python:3.12",
+  "features": {
+    "ghcr.io/devcontainers/features/node:1": { "version": "22" },
+    "ghcr.io/devcontainers/features/github-cli:1": {}
+  },
+  "postCreateCommand": "sudo apt-get update && sudo apt-get install -y --no-install-recommends g++ && pip install -r requirements.txt && npm install -g @anthropic-ai/claude-code @openai/codex",
+  "forwardPorts": [5000],
+  "portsAttributes": {
+    "5000": { "label": "Logic Judge", "onAutoForward": "openBrowser" }
+  },
+  "hostRequirements": { "cpus": 2 }
+}
